@@ -1,0 +1,11 @@
+.godot/
+*.import
+build/
+dist/
+shots/
+*.snap
+*.env
+assets/art_raw/
+assets/sfx_raw/
+assets/tables/*/sfx_raw/
+appimagetool

@@ -1,0 +1,34 @@
+name: nudge
+title: Nudge
+base: core24
+version: "0.1.0"
+summary: Arcade pinball with a Deep Space table
+description: |
+  Nudge is a 3D arcade pinball game by QuietByte. Table one, Deep Space, has
+  bumpers on the sun and planets, orbit lanes, a spinner and a black hole that
+  swallows the ball. Includes a follow camera, a top-ten table and three
+  graphics quality levels for slower graphics chips.
+grade: stable
+confinement: strict
+license: Apache-2.0
+contact: quietbyte.2026@gmail.com
+icon: assets/logo/nudge-512.png
+
+apps:
+  nudge:
+    command: usr/bin/nudge
+    desktop: usr/share/applications/nudge.desktop
+    extensions: [gnome]
+    plugs:
+      - opengl
+      - audio-playback
+      - joystick
+
+parts:
+  nudge:
+    plugin: dump
+    source: dist/nudge_0.1.0_amd64.deb
+    override-build: |
+      craftctl default
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/nudge.png|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/nudge.desktop"

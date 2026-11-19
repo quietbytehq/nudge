@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Nudge
+Comment=Arcade pinball by QuietByte
+Exec=nudge
+Icon=nudge
+Terminal=false
+Categories=Game;ArcadeGame;
