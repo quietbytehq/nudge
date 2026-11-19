@@ -7,7 +7,7 @@ Table one is **Deep Space**; five more tables are planned.
 
 Get the latest build from the [Releases](../../releases) page:
 
-- **Linux** - AppImage (any distribution), `.deb` (Debian/Ubuntu), `.tar.gz`, or the `nudge` snap
+- **Linux** - AppImage (any distribution), `.deb` (Debian/Ubuntu), `.tar.gz`, or the `nudge-pinball` snap
 - **Windows** - zip containing `Nudge.exe`
 
 ## Controls
@@ -34,7 +34,7 @@ if it runs below about 45 frames per second; press G to choose one yourself.
     godot --path .                                        # run
     godot --headless --path . -s tests/sim_test.gd        # physics tests
     godot --headless --path . --export-release "Linux" build/linux/nudge.x86_64
-    packaging/build_linux.sh 0.1.0                        # tar.gz, .deb, AppImage
+    packaging/build_linux.sh 0.1.1                        # tar.gz, .deb, AppImage
 
 ## Layout
 
