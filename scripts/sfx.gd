@@ -19,6 +19,12 @@ var _flat: Array[AudioStreamPlayer] = []
 var _flat_next := 0
 var _ambient: AudioStreamPlayer
 var table_id := ""
+var _voice: Dictionary = {}        # announcer lines: name -> AudioStream
+var _voice_player: AudioStreamPlayer
+var _voice_level := 0
+var _voice_next := ""
+var _voice_next_level := 0
+var voice_enabled := true
 
 
 func _ready() -> void:
@@ -40,6 +46,16 @@ func _ready() -> void:
 		if list.size() > 0:
 			_samples[sound] = list
 	_load_theme()
+	for line in ["start", "allright", "heehay", "ohyeah", "haha", "niceshot", "combo", "jackpot",
+			"multiball", "unbelievable", "easy", "tough", "lastball", "highscore", "gameover"]:
+		var vs := Tables.audio("res://assets/voice/%s.wav" % line)
+		if vs != null:
+			_voice[line] = vs
+	_voice_player = AudioStreamPlayer.new()
+	_voice_player.bus = "SFX"
+	_voice_player.volume_db = -1.0
+	add_child(_voice_player)
+	_voice_player.finished.connect(_voice_done)
 	for i in 4:
 		var fp := AudioStreamPlayer.new()
 		fp.bus = "SFX"
@@ -79,6 +95,35 @@ func play_flat(sound: String, volume_db: float = -4.0) -> void:
 	p.stream = _pick(themed, "t_" + sound)
 	p.volume_db = volume_db
 	p.play()
+
+
+## The announcer. A line of a higher level cuts in on the one playing; with
+## wait = true a line that cannot play yet is said next instead of dropped.
+func say(line: String, level: int = 1, wait: bool = false) -> void:
+	if not voice_enabled or not _voice.has(line):
+		return
+	if _voice_player.playing and level <= _voice_level:
+		if wait and level >= _voice_next_level:
+			_voice_next = line
+			_voice_next_level = level
+		return
+	_voice_level = level
+	_voice_player.stream = _voice[line]
+	_voice_player.play()
+
+
+func _voice_done() -> void:
+	_voice_level = 0
+	if _voice_next != "":
+		var line := _voice_next
+		var level := _voice_next_level
+		_voice_next = ""
+		_voice_next_level = 0
+		say(line, level)
+
+
+func voice_count() -> int:
+	return _voice.size()
 
 
 func _pick(variants: Array, key: String) -> AudioStream:

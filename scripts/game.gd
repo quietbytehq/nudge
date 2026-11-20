@@ -264,6 +264,7 @@ func _new_game() -> void:
 	phys.clear_balls()
 	_spawn_ball()
 	sfx.play_flat("start")
+	sfx.say("start", 2)
 	_toast("Ball 1 - hold Space and release to launch")
 
 
@@ -287,7 +288,22 @@ func _toast(text: String, seconds: float = 2.5) -> void:
 
 
 func _add_score(points: int) -> void:
+	var before := score
 	score += points * multiplier
+	if score / 50000 > before / 50000:
+		sfx.say("unbelievable", 2, true)
+
+
+var _feat_at := -99.0
+var _streak := 0
+var _streak_at := 0.0
+var _laugh_at := -99.0
+
+## Announcer line for a ramp or saucer shot: a second one soon after earns "nice shot".
+func _feat(line: String) -> void:
+	var now := Time.get_ticks_msec() * 0.001
+	sfx.say("niceshot" if now - _feat_at < 15.0 else line, 1)
+	_feat_at = now
 
 
 ## Shows the points just scored floating up from where it happened.
@@ -354,6 +370,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed(dirn[0]) and nudge_heat < 1.0:
 			phys.nudge(dirn[1])
 			nudge_heat += 0.45
+			if nudge_heat >= 0.9:
+				sfx.say("easy", 1)
 			cam.add_shake(0.5)
 
 
@@ -379,6 +397,7 @@ func _physics_process(delta: float) -> void:
 			_pending_balls.erase(pb)
 			if not game_over:
 				phys.add_ball(pb[1], pb[2])
+				sfx.say("multiball", 3, true)
 				sfx.play("launch", view.ball_world(pb[1]), 0.8)
 	for h in _held.duplicate():
 		h[1] -= delta
@@ -407,6 +426,8 @@ func _physics_process(delta: float) -> void:
 		if respawn_timer <= 0.0:
 			_spawn_ball()
 			_toast("Ball %d" % ball_num)
+			if ball_num == BALLS_PER_GAME:
+				sfx.say("lastball", 2, true)
 
 
 func _handle_events() -> void:
@@ -429,6 +450,12 @@ func _handle_events() -> void:
 				view.excite(0.5)
 				cam.add_shake(0.35)
 				sfx.play("bumper", wp, 0.9)
+				var tnow := Time.get_ticks_msec() * 0.001
+				_streak = _streak + 1 if tnow - _streak_at < 1.2 else 1
+				_streak_at = tnow
+				if _streak >= 5 and tnow - _laugh_at > 14.0:
+					_laugh_at = tnow
+					sfx.say("haha", 1)
 			E.SLING:
 				_add_score(10)
 				view.flash_sling(id)
@@ -513,6 +540,10 @@ func _capture(at: Vector2) -> void:
 			view.hole_pulse(1.0)
 			view.excite(1.5)
 			sfx.play("bonus", view.ball_world(at), 0.8)
+			if prize >= 10000:
+				sfx.say("jackpot", 3)
+			else:
+				_feat("ohyeah")
 			_toast("%s  +%s" % [label, _commas(prize * multiplier)], 1.6 if prize == 1000 else 2.4)
 			return
 
@@ -528,6 +559,7 @@ func _shield_hit(id: int, wp: Vector3) -> void:
 		_add_score(5000)
 		view.excite(2.0)
 		sfx.play("bonus", wp, 1.0)
+		sfx.say("allright", 2)
 		_toast("SHIELDS COMPLETE  -  THE CASTLE GATE IS OPEN", 2.6)
 
 
@@ -621,6 +653,10 @@ func _update_rides(delta: float) -> void:
 			cam.add_shake(0.6)
 			_flash_screen(Color(1.0, 0.45, 0.1), 0.25)
 			sfx.play("bonus", view.ball_world(b.pos), 1.0)
+			if _combo >= 2:
+				sfx.say("combo", 2)
+			else:
+				_feat("heehay")
 			_toast("%s  +%s" % [table.get("ramp_award", "VOLCANO ERUPTS"), _commas(award * multiplier)], 1.8)
 
 
@@ -659,6 +695,7 @@ func _on_sensor(id: int, wp: Vector3, at: Vector2 = Vector2.ZERO) -> void:
 			sfx.play("bonus", wp, 0.8)
 			view.excite(1.5)
 			_flash_screen(Color(0.5, 0.8, 1.0), 0.3)
+			sfx.say("allright", 2)
 			_toast("Bonus multiplier x%d" % multiplier)
 	else:
 		_add_score(50)
@@ -684,11 +721,14 @@ func _on_drain(wp: Vector3) -> void:
 		if score > best:
 			best = score
 			_save_best()
+			sfx.say("highscore", 4)
 			_toast("New best score! Press Space to play again", 9999.0)
 		else:
+			sfx.say("gameover", 4)
 			_toast("Game over - press Space to play again", 9999.0)
 		game_finished.emit(score)
 	else:
+		sfx.say("tough", 2)
 		respawn_timer = 1.2
 
 
@@ -815,5 +855,5 @@ func _shot_step() -> void:
 		cam.mode = CameraRig.Mode.DYNAMIC
 	if _frame >= 1120:
 		print("SELFCHECK frames=%d ball_offscreen=%d flippers_offscreen=%d fps=%d score=%d sfx_samples=%d" % [
-			_vis_frames, _vis_fail_ball, _vis_fail_flip, int(Engine.get_frames_per_second()), score, sfx.sample_count()])
+			_vis_frames, _vis_fail_ball, _vis_fail_flip, int(Engine.get_frames_per_second()), score, sfx.sample_count() + sfx.voice_count()])
 		get_tree().quit()
