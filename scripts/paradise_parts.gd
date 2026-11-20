@@ -233,14 +233,31 @@ func features() -> void:
 
 
 func _hut() -> void:
-	var c := Vector2(-0.207, 0.517)
+	var c := Vector2(-0.201, 0.517)
 	for q in [Vector2(-0.25, 0.478), Vector2(-0.25, 0.558), Vector2(-0.20, 0.467), Vector2(-0.168, 0.552)]:
 		v._cyl(0.0032, 0.05, TableView.to3(q, 0.025), _wood)
 		v._cyl(0.0038, 0.002, TableView.to3(q, 0.012), _wood_dark)
 	# two layers of thatch
-	v._cyl(0.058, 0.026, TableView.to3(c, 0.061), _thatch, v, 0.03)
-	v._cyl(0.036, 0.03, TableView.to3(c, 0.087), _thatch, v, 0.004)
-	v._cyl(0.059, 0.0025, TableView.to3(c, 0.0485), _wood_dark, v, 0.058)
+	v._cyl(0.054, 0.024, TableView.to3(c, 0.060), _thatch, v, 0.028)
+	v._cyl(0.034, 0.028, TableView.to3(c, 0.084), _thatch, v, 0.004)
+	v._cyl(0.055, 0.0025, TableView.to3(c, 0.0485), _wood_dark, v, 0.054)
+	# a ragged fringe of straw round the eaves
+	for k in 22:
+		var fa := TAU * k / 22.0
+		var straw := v._box(Vector3(0.006, 0.009, 0.0012), TableView.to3(c, 0.044) + Vector3(cos(fa) * 0.053, 0, sin(fa) * 0.053), _thatch)
+		straw.rotation.y = -fa + PI * 0.5
+	# carved tiki totems guarding the doorway, with glowing eyes
+	for tq in [Vector2(-0.192, 0.459), Vector2(-0.158, 0.556)]:
+		var tp := TableView.to3(tq, 0.0)
+		v._cyl(0.0062, 0.034, tp + Vector3(0, 0.017, 0), _wood)
+		v._cyl(0.0072, 0.004, tp + Vector3(0, 0.034, 0), _wood_dark)
+		v._box(Vector3(0.007, 0.0022, 0.002), tp + Vector3(0.001, 0.011, 0.0058), _wood_dark)
+		for ex in [-0.0022, 0.0022]:
+			_sphere(0.0013, 1.0, _flame, tp + Vector3(ex + 0.001, 0.022, 0.0058), v)
+	# bottles on the bar
+	var bottle_cols := [Color(0.1, 0.7, 0.3), Color(0.9, 0.5, 0.1), Color(0.2, 0.5, 0.9), Color(0.85, 0.15, 0.2)]
+	for bi in 4:
+		v._cyl(0.0016, 0.008, TableView.to3(Vector2(-0.2495, 0.492 + bi * 0.017), 0.02), v._lit(bottle_cols[bi], 0.5), v, 0.0008)
 	# the bar at the back, with a row of little lanterns
 	v._box(Vector3(0.008, 0.016, 0.07), TableView.to3(Vector2(-0.2505, 0.518), 0.008), _wood_dark)
 	for i in 3:
@@ -423,8 +440,11 @@ func _scenery() -> void:
 		for q in [[Vector2(side * 0.21, 1.03), 0.034, 0.9], [Vector2(side * 0.165, 1.055), 0.028, 1.1], [Vector2(side * 0.238, 0.975), 0.022, 0.8]]:
 			var blob := _sphere(q[1], q[2], _rock, TableView.to3(q[0], 0.034 + q[1] * q[2] * 0.55), v)
 			blob.rotation.y = side * 0.6
-		var fall := v._box(Vector3(0.012, 0.045, 0.002), TableView.to3(Vector2(side * 0.19, 1.012), 0.058), _water)
-		fall.rotation.x = deg_to_rad(-18.0)
+		for wf in [[0.19, 1.012, 0.012, 0.048], [0.224, 0.992, 0.008, 0.036]]:
+			var fall := v._box(Vector3(wf[2], wf[3], 0.002), TableView.to3(Vector2(side * wf[0], wf[1]), 0.036 + wf[3] * 0.5), _water)
+			fall.rotation.x = deg_to_rad(-14.0)
+			for fk in 3:   # foam where the water lands
+				_sphere(0.004, 0.6, v._m_white, TableView.to3(Vector2(side * wf[0] + (fk - 1) * 0.005, wf[1] - 0.008), 0.036), v)
 		_palm(Vector2(side * 0.232, 1.045), 0.13, side * 0.035)
 		_palm(Vector2(side * 0.185, 1.075), 0.165, side * -0.02)
 	# small rocks at the mouth of the hut and the foot of the pier
