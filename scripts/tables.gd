@@ -14,6 +14,7 @@ const LIST := [
 		"available": true,
 		"layered": ["bumper"],
 		"saucer": "BLACK HOLE",
+		"floor": {"glow_a": Color(0.35, 0.65, 1.0), "glow_b": Color(0.85, 0.35, 1.0), "ripple": 0.0, "flow": 0.5, "sparkle": 1.0, "sweep": 0.5},
 		"hit_words": {"bumper": ["ZAP!", "BOOM!", "NOVA!", "WARP!", "KA-POW!"], "target": ["BLAST!", "LOCKED!", "DIRECT HIT!"]},
 	},
 	{
@@ -29,6 +30,7 @@ const LIST := [
 		"saucer_kick": Vector2(1.2, -0.9),
 		"ramp": true,
 		"theme": "paradise",
+		"floor": {"glow_a": Color(0.25, 0.95, 0.9), "glow_b": Color(1.0, 0.75, 0.3), "ripple": 1.0, "flow": 0.9, "sparkle": 0.5, "sweep": 0.35},
 		"bumper_kinds": ["beach", "coconut", "coconut", "beach", "drum", "buoy", "islet"],
 		"look": {"albedo": 0.8, "exposure": 0.9, "ambient": 0.2, "contrast": 1.1, "spots": 0.7},
 		"bumper_cols": [Color(0.55, 0.33, 0.14), Color(0.6, 0.36, 0.15), Color(0.5, 0.3, 0.12),
@@ -49,6 +51,7 @@ const LIST := [
 		"ramp_award": "ALPENGLOW",
 		"rules": "alpenglow",
 		"theme": "alpenglow",
+		"floor": {"glow_a": Color(1.0, 0.72, 0.3), "glow_b": Color(1.0, 0.4, 0.55), "ripple": 0.0, "flow": 0.45, "sparkle": 0.8, "sweep": 0.6},
 		"bumper_kinds": ["tower", "barrel", "barrel", "tower", "well", "press", "fountain"],
 		"look": {"albedo": 0.85, "exposure": 0.95, "ambient": 0.16, "contrast": 1.12, "spots": 0.6},
 	},

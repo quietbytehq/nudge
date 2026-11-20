@@ -40,6 +40,12 @@ var _lamp_phase: Array[float] = []
 var _lamp_speed: Array[float] = []
 var _excite := 0.0
 var _time := 0.0
+var _floor: ShaderMaterial        # animated playfield art
+var _floor_size := Vector2.ONE
+var _floor_cz := 0.0
+var _floor_balls: Array[Vector4] = []
+var _floor_hits: Array[Vector4] = []
+var _floor_hit_i := 0
 var _flashes: Array[OmniLight3D] = []
 var _flash_i := 0
 var _hole_mat: StandardMaterial3D
@@ -241,15 +247,29 @@ func _build_cabinet() -> void:
 	# The printed artwork sits on its own sheet so the whole image maps onto
 	# the playfield (top of the image = far end of the table).
 	# the art is kept a little darker than the parts so obstacles stand out
-	var pf := _mat(Color(0.74, 0.74, 0.76) * table.get("look", {}).get("albedo", 1.0), 0.0, 0.22)
+	var tint: Color = Color(0.74, 0.74, 0.76) * float(table.get("look", {}).get("albedo", 1.0))
+	var pf: Material
 	if art != null:
-		pf.albedo_texture = art
-		pf.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		var fl: Dictionary = table.get("floor", {})
+		_floor = ShaderMaterial.new()
+		_floor.shader = load("res://shaders/floor.gdshader")
+		_floor.set_shader_parameter("art", art)
+		_floor.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+		_floor.set_shader_parameter("aspect", Vector2(1.0, pf_size.y / pf_size.x))
+		for k in fl:
+			_floor.set_shader_parameter(k, fl[k])
+		_floor_size = pf_size
+		_floor_cz = pf_center.z
+		for i in 4:
+			_floor_balls.append(Vector4.ZERO)
+			_floor_hits.append(Vector4(0, 0, 9, 0))
+		pf = _floor
 	else:
-		pf.albedo_color = Color(0.08, 0.12, 0.3)
-	pf.clearcoat_enabled = true
-	pf.clearcoat = 0.5
-	pf.clearcoat_roughness = 0.1
+		var plain := _mat(Color(0.08, 0.12, 0.3), 0.0, 0.22)
+		plain.clearcoat_enabled = true
+		plain.clearcoat = 0.5
+		plain.clearcoat_roughness = 0.1
+		pf = plain
 	var pm := PlaneMesh.new()
 	pm.size = pf_size
 	_mesh(pm, pf, pf_center)
@@ -788,9 +808,17 @@ func spark(at: Vector2, _strength: float) -> void:
 	ps.emitting = true
 
 
+func _floor_uv(v: Vector2) -> Vector2:
+	return Vector2(v.x / _floor_size.x + 0.5, (-v.y - _floor_cz) / _floor_size.y + 0.5)
+
+
 func flash_at(at: Vector2, col: Color, energy: float) -> void:
 	if not effects_enabled:
 		return
+	if _floor != null:
+		var uv := _floor_uv(at)
+		_floor_hits[_floor_hit_i] = Vector4(uv.x, uv.y, 0.0, clampf(energy * 0.5, 0.4, 1.2))
+		_floor_hit_i = (_floor_hit_i + 1) % 4
 	var l := _flashes[_flash_i]
 	_flash_i = (_flash_i + 1) % _flashes.size()
 	l.position = to3(at, 0.05)
@@ -902,6 +930,21 @@ func sync(delta: float, frac: float) -> void:
 
 	if _theme != null:
 		_theme.sync(delta, _time)
+
+	if _floor != null:
+		var n := 0
+		for i in 4:
+			_floor_balls[i] = Vector4.ZERO
+			_floor_hits[i].z += delta
+		for b in phys.balls:
+			if b.active and n < 4:
+				var uv := _floor_uv(b.pos)
+				_floor_balls[n] = Vector4(uv.x, uv.y, 1.0, 0.0)
+				n += 1
+		_floor.set_shader_parameter("ball", _floor_balls)
+		_floor.set_shader_parameter("hit", _floor_hits)
+		_floor.set_shader_parameter("excite", _excite)
+		_floor.set_shader_parameter("fx", 1.0 if effects_enabled else 0.0)
 
 	# lamps
 	_excite = maxf(0.0, _excite - delta * 1.6)
