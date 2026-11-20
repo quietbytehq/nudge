@@ -235,7 +235,7 @@ func _build_cabinet() -> void:
 	# The printed artwork sits on its own sheet so the whole image maps onto
 	# the playfield (top of the image = far end of the table).
 	# the art is kept a little darker than the parts so obstacles stand out
-	var pf := _mat(Color(0.72, 0.72, 0.72) if table.get("bright", false) else Color(0.74, 0.74, 0.76), 0.0, 0.22)
+	var pf := _mat(Color(0.74, 0.74, 0.76) * table.get("look", {}).get("albedo", 1.0), 0.0, 0.22)
 	if art != null:
 		pf.albedo_texture = art
 		pf.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC

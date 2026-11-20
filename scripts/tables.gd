@@ -22,7 +22,7 @@ const LIST := [
 		"available": true,
 		"layered": ["bumper"],
 		"saucer": "VOLCANO",
-		"bright": true,
+		"look": {"albedo": 0.8, "exposure": 0.9, "ambient": 0.2, "contrast": 1.1, "spots": 0.7},
 		"saucer_cone": true,
 		"bumper_cols": [Color(0.55, 0.33, 0.14), Color(0.6, 0.36, 0.15), Color(0.5, 0.3, 0.12),
 			Color(1.0, 0.25, 0.2), Color(0.1, 0.6, 1.0), Color(1.0, 0.75, 0.1), Color(0.2, 0.85, 0.5)],

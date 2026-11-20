@@ -78,6 +78,20 @@ func _ready() -> void:
 
 # ---------------------------------------------------------------- setup
 
+func _look() -> Dictionary:
+	var look: Dictionary = table.get("look", {}).duplicate()
+	# tuning aid: --look=albedo,exposure,ambient,contrast,spots
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--look="):
+			var v := a.trim_prefix("--look=").split_floats(",")
+			var keys := ["albedo", "exposure", "ambient", "contrast", "spots", "saturation"]
+			for i in mini(v.size(), keys.size()):
+				look[keys[i]] = v[i]
+	table = table.duplicate()
+	table["look"] = look
+	return look
+
+
 func _build_environment() -> void:
 	var env := Environment.new()
 	# A "dark room with a softbox overhead" sky. The camera always looks down,
@@ -110,10 +124,12 @@ func _build_environment() -> void:
 	env.ssao_enabled = true
 	env.ssao_radius = 0.05
 	env.ssao_intensity = 2.6
-	if table.get("bright", false):
-		# a sunny table: lift the exposure and the fill light
-		env.tonemap_exposure = 1.08
-		env.ambient_light_energy = 0.26
+	# per-table lighting: brightly printed tables need less light and contrast
+	var look := _look()
+	env.tonemap_exposure = look.get("exposure", env.tonemap_exposure)
+	env.ambient_light_energy = look.get("ambient", env.ambient_light_energy)
+	env.adjustment_contrast = look.get("contrast", env.adjustment_contrast)
+	env.adjustment_saturation = look.get("saturation", env.adjustment_saturation)
 	_env = env
 	var we := WorldEnvironment.new()
 	we.environment = env
@@ -130,7 +146,7 @@ func _build_environment() -> void:
 		add_child(sp)
 		sp.look_at(Vector3(-0.02, 0.03, -0.5), Vector3.UP)
 		sp.light_color = d[1]
-		sp.light_energy = d[2]
+		sp.light_energy = d[2] * look.get("spots", 1.0)
 		sp.spot_range = 2.5
 		sp.spot_angle = 38.0
 		sp.spot_attenuation = 0.6
