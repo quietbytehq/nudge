@@ -13,6 +13,7 @@
 - Global top 100: a top-ten score can also be posted to nudge.quietbytehq.uk (name, score and
   table only). The name screen says so, and Tab keeps the score on this computer instead.
 - Table one is now called Cosmic Drift.
+- New app icon.
 - Each table's name logo is shown on its table-select card and on the play screen.
 
 ## 0.1.1
