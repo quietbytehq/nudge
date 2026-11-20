@@ -12,4 +12,4 @@ MAX_SCORE = "50000000"
 [[d1_databases]]
 binding = "DB"
 database_name = "nudge-scores"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "b8642ed6-f0eb-4484-8657-644e24a70633"
