@@ -184,6 +184,9 @@ func surfboard(s: PinPhysics.Seg) -> StandardMaterial3D:
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 		m.alpha_scissor_threshold = 0.5
 		w = h * tex.get_width() / float(tex.get_height())
+		if w > 0.037:          # wide artwork (shields): shrink to fit its slot
+			h *= 0.037 / w
+			w = 0.037
 	else:
 		m.albedo_color = cols[s.id % 5]
 		m.emission = cols[s.id % 5]
@@ -386,7 +389,12 @@ func _pier_and_rail() -> void:
 	for q3 in [[Vector2(0.15, 0.80), 0.022, 2.6], [Vector2(0.212, 0.805), 0.02, 2.9], [Vector2(0.181, 0.812), 0.03, 0.45]]:
 		var blob := _sphere(q3[1], q3[2], _rock, TableView.to3(q3[0], 0.03 if q3[2] > 1.0 else 0.118), v)
 		blob.scale.z = 1.3
-	# the wire rail: two runners under the ball, two guides beside it, and hoops
+	_rail(path, split)
+
+
+## The chrome wire rail from the tunnel down to the inlane: two runners under
+## the ball, two guides beside it, and hoops.
+func _rail(path: PackedVector3Array, split: int) -> void:
 	var runs: Array[PackedVector3Array] = [PackedVector3Array(), PackedVector3Array(), PackedVector3Array(), PackedVector3Array()]
 	var last_hoop := -1.0
 	var dist := 0.0

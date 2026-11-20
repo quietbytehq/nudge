@@ -33,6 +33,11 @@ var toast_time := 0.0
 var nudge_heat := 0.0
 var _held: Array = []            # [ball, seconds left] captured by the black hole
 var _rides: Array = []           # balls riding the ramp: {b, s, v, t, off, erupted}
+var _shields := {}               # Alpenglow: shields lit so far
+var _gate_open := false          # Alpenglow: all shields lit, the castle pays the jackpot
+var _combo := 0                  # Alpenglow: ramps made in a row
+var _combo_until := 0.0
+var _pending_balls: Array = []   # balls waiting to be served: [seconds, position, velocity]
 var _ramp: PackedVector3Array    # ramp centre line as (x, y, height)
 var _ramp_len: PackedFloat32Array
 var _ramp_crest := 0.0
@@ -349,6 +354,13 @@ func _physics_process(delta: float) -> void:
 	_handle_events()
 	_hole_cooldown = maxf(0.0, _hole_cooldown - delta)
 	_update_rides(delta)
+	for pb in _pending_balls.duplicate():
+		pb[0] -= delta
+		if pb[0] <= 0.0:
+			_pending_balls.erase(pb)
+			if not game_over:
+				phys.add_ball(pb[1], pb[2])
+				sfx.play("launch", view.ball_world(pb[1]), 0.8)
 	for h in _held.duplicate():
 		h[1] -= delta
 		if h[1] <= 0.0:
@@ -406,6 +418,7 @@ func _handle_events() -> void:
 				sfx.play("sling", wp, 0.8)
 			E.TARGET:
 				_add_score(500)
+				_shield_hit(id, wp)
 				_pop(at, 500, "cyan")
 				view.flash_target(id)
 				view.spark(at, strength)
@@ -461,13 +474,40 @@ func _capture(at: Vector2) -> void:
 			b.prev = b.pos
 			_held.append([b, 1.1])
 			_hole_cooldown = 2.0
-			_add_score(1000)
-			_pop(at, 1000, "orange")
+			var prize := 1000
+			var label: String = table.get("saucer", "BLACK HOLE")
+			if _gate_open:
+				# Alpenglow: the gate was open, so this is the jackpot and two more balls
+				_gate_open = false
+				prize = 10000
+				label = "CASTLE JACKPOT  -  MULTIBALL"
+				for sid in _shields:
+					view.set_target_lit(sid, false)
+				_shields.clear()
+				var kick2: Vector2 = table.get("saucer_kick", Vector2(1.2, -0.9))
+				_pending_balls.append([1.7, TableLayout.HOLE + Vector2(0.04, -0.012), kick2])
+				_pending_balls.append([2.3, TableLayout.HOLE + Vector2(0.04, -0.012), kick2 * 0.85])
+			_add_score(prize)
+			_pop(at, prize, "orange")
 			view.hole_pulse(1.0)
 			view.excite(1.5)
 			sfx.play("bonus", view.ball_world(at), 0.8)
-			_toast("%s  +%s" % [table.get("saucer", "BLACK HOLE"), _commas(1000 * multiplier)], 1.6)
+			_toast("%s  +%s" % [label, _commas(prize * multiplier)], 1.6 if prize == 1000 else 2.4)
 			return
+
+
+## Alpenglow: a shield stays lit once hit; lighting all five opens the castle gate.
+func _shield_hit(id: int, wp: Vector3) -> void:
+	if table.get("rules", "") != "alpenglow" or id >= 5 or _shields.has(id) or _gate_open:
+		return
+	_shields[id] = true
+	view.set_target_lit(id, true)
+	if _shields.size() == 5:
+		_gate_open = true
+		_add_score(5000)
+		view.excite(2.0)
+		sfx.play("bonus", wp, 1.0)
+		_toast("SHIELDS COMPLETE  -  THE CASTLE GATE IS OPEN", 2.6)
 
 
 ## A ball has been taken onto the ramp by the physics; ride it along the path.
@@ -545,15 +585,22 @@ func _update_rides(delta: float) -> void:
 		b.vel = Vector2(ahead.x - here.x, ahead.y - here.y) / d * v
 		if not r["erupted"] and s >= _ramp_erupt:
 			r["erupted"] = true
-			_add_score(2500)
-			_pop(b.pos, 2500, "orange")
+			var award := 2500
+			if table.get("rules", "") == "alpenglow":
+				# each ramp made within twelve seconds of the last is worth more
+				var now := Time.get_ticks_msec() * 0.001
+				_combo = _combo + 1 if now < _combo_until else 1
+				_combo_until = now + 12.0
+				award = 2500 * mini(_combo, 4)
+			_add_score(award)
+			_pop(b.pos, award, "orange")
 			view.hole_pulse(1.0)
 			view.erupt()
 			view.excite(2.0)
 			cam.add_shake(0.6)
 			_flash_screen(Color(1.0, 0.45, 0.1), 0.25)
 			sfx.play("bonus", view.ball_world(b.pos), 1.0)
-			_toast("VOLCANO ERUPTS  +%s" % _commas(2500 * multiplier), 1.8)
+			_toast("%s  +%s" % [table.get("ramp_award", "VOLCANO ERUPTS"), _commas(award * multiplier)], 1.8)
 
 
 func _on_sensor(id: int, wp: Vector3, at: Vector2 = Vector2.ZERO) -> void:
@@ -605,6 +652,10 @@ func _on_drain(wp: Vector3) -> void:
 	phys.clear_balls()
 	_held.clear()
 	_rides.clear()
+	_pending_balls.clear()
+	_shields.clear()
+	_gate_open = false
+	_combo = 0
 	charging = false
 	ball_num += 1
 	if ball_num > BALLS_PER_GAME:

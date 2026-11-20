@@ -46,6 +46,7 @@ var _hole_mat: StandardMaterial3D
 var _hole_light: OmniLight3D
 var _hole_pulse := 0.0
 var _theme: ParadiseParts         # themed parts, for tables that have them
+var _target_lit := {}             # targets that stay lit (table rules)
 var _spinner: Node3D
 var _spin_speed := 0.0
 var _flashers: Array[StandardMaterial3D] = []
@@ -78,6 +79,8 @@ func setup(p: PinPhysics, table_def: Dictionary = {}) -> void:
 	_make_materials()
 	if table.get("theme", "") == "paradise":
 		_theme = ParadiseParts.new(self)
+	elif table.get("theme", "") == "alpenglow":
+		_theme = AlpenglowParts.new(self)
 	_build_cabinet()
 	_build_plastics()
 	_build_segments()
@@ -817,6 +820,14 @@ func spin(speed: float) -> void:
 	_spin_speed = maxf(_spin_speed, speed * 22.0)
 
 
+## Keeps a target lit, or lets it go dark again.
+func set_target_lit(id: int, on: bool) -> void:
+	if on:
+		_target_lit[id] = true
+	else:
+		_target_lit.erase(id)
+
+
 ## The volcano goes off (tables that have one).
 func erupt() -> void:
 	if _theme != null:
@@ -922,7 +933,7 @@ func sync(delta: float, frac: float) -> void:
 		_sling_mats[i].emission_energy_multiplier = 0.2 + _sling_flash[i] * 3.0
 	for id in _target_mats:
 		_target_flash[id] = maxf(0.0, _target_flash[id] - delta * 4.0)
-		_target_mats[id].emission_energy_multiplier = 0.08 + _target_flash[id] * 1.8
+		_target_mats[id].emission_energy_multiplier = 0.08 + _target_flash[id] * 1.8 + (0.9 if _target_lit.has(id) else 0.0)
 	for id in _inserts:
 		var v: float = _insert_on[id]
 		if v > 0.0 and v < 1.0:

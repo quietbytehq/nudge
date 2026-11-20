@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+- New table three, Alpenglow: a Swiss lakeside castle at dusk. Tower and wine-barrel bumpers,
+  five heraldic shields, a castle whose gate holds the ball, a stone causeway ramp into a
+  snowy peak that glows pink, iron lanterns and autumn trees. Own music and sounds.
+- Alpenglow has its own rules: a shield stays lit once hit; lighting all five opens the
+  castle gate for a 10,000 jackpot and a three-ball multiball; ramps made in a row pay more.
+- The global top 100 gains an Alpenglow tab.
+
 ## 0.2.0
 - New table two, Paradise Bay, built after its concept painting: beach-ball and coconut
   bumpers, a row of five standing surfboard targets, a tiki hut that holds and kicks the

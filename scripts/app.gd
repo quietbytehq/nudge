@@ -261,7 +261,7 @@ func _build_intro() -> void:
 	else:
 		_title = _text(TITLE, 190, Color(1.0, 0.9, 0.3), Color(1.0, 0.25, 0.5), 22, Color(0.2, 0.5, 1.0, 0.75), true)
 		_place(_title, _intro, 0.30)
-	var sub := _text("COSMIC DRIFT   *   PARADISE BAY", 30, Color(1.0, 0.85, 0.3), Color(0.6, 0.1, 0.5), 10, Color(0, 0, 0, 0), true)
+	var sub := _text("COSMIC DRIFT   *   PARADISE BAY   *   ALPENGLOW", 30, Color(1.0, 0.85, 0.3), Color(0.6, 0.1, 0.5), 10, Color(0, 0, 0, 0), true)
 	_place(sub, _intro, 0.60)
 	for y in [0.775, 0.905]:
 		var line := ColorRect.new()

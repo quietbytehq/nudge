@@ -45,7 +45,7 @@ static func _arc(p: PinPhysics, r: float, a0: float, a1: float, steps: int) -> v
 
 
 static func build(p: PinPhysics) -> void:
-	if table_id == "paradise_bay":
+	if table_id == "paradise_bay" or table_id == "alpenglow":
 		HOLE = Vector2(-0.225, 0.518)
 		_build_paradise(p)
 		return
@@ -327,7 +327,7 @@ static func _build_paradise(p: PinPhysics) -> void:
 ## True for points inside closed-off parts of the table where no ball can be
 ## (behind the surfboard row, inside the ramp lane beyond its back wall).
 static func is_solid(q: Vector2) -> bool:
-	if table_id != "paradise_bay":
+	if table_id == "deep_space":
 		return false
 	if q.x > -0.15 and q.x < 0.10 and q.y > 0.675 and q.y < 0.76:
 		return true
