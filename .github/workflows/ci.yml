@@ -83,3 +83,7 @@ jobs:
         with:
           snap: ${{ steps.build.outputs.snap }}
           release: edge
+      - name: Update the store listing (icon, summary, description)
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: snapcraft upload-metadata --force "${{ steps.build.outputs.snap }}"
