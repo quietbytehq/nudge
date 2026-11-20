@@ -279,7 +279,11 @@ func _ball_in_lane() -> PinPhysics.Ball:
 
 
 func _toast(text: String, seconds: float = 2.5) -> void:
-	hud.toast(text, seconds)
+	# awards and big moments get the animated banner; plain notices stay as a toast
+	if "+" in text or "JACKPOT" in text or "COMPLETE" in text:
+		hud.banner(text)
+	else:
+		hud.toast(text, seconds)
 
 
 func _add_score(points: int) -> void:
@@ -287,6 +291,21 @@ func _add_score(points: int) -> void:
 
 
 ## Shows the points just scored floating up from where it happened.
+## A comic word at a hit, from the table's own set. Not on every hit, so it stays readable.
+const HIT_WORDS := {"bumper": ["POW!", "BAM!", "BOING!", "ZAP!"], "target": ["SMASH!", "NICE!", "HIT!"]}
+var _word_at := 0.0
+
+func _word(kind: String, at: Vector2, colour: String) -> void:
+	var now := Time.get_ticks_msec() * 0.001
+	if now - _word_at < (0.35 if kind == "bumper" else 0.1):
+		return
+	_word_at = now
+	var words: Array = table.get("hit_words", HIT_WORDS).get(kind, HIT_WORDS[kind])
+	var wp := view.ball_world(at)
+	if not cam.is_position_behind(wp):
+		hud.bang(cam.unproject_position(wp), words[randi() % words.size()], colour)
+
+
 func _pop(at: Vector2, points: int, colour: String) -> void:
 	var wp := view.ball_world(at)
 	if not cam.is_position_behind(wp):
@@ -403,6 +422,7 @@ func _handle_events() -> void:
 			E.BUMPER:
 				_add_score(100)
 				_pop(at, 100, "gold")
+				_word("bumper", at, "orange")
 				view.flash_bumper(id)
 				view.spark(at, strength)
 				view.flash_at(at, Color(1.0, 0.6, 0.2), 3.0)
@@ -418,6 +438,7 @@ func _handle_events() -> void:
 				sfx.play("sling", wp, 0.8)
 			E.TARGET:
 				_add_score(500)
+				_word("target", at, "cyan")
 				_shield_hit(id, wp)
 				_pop(at, 500, "cyan")
 				view.flash_target(id)

@@ -14,6 +14,7 @@ const LIST := [
 		"available": true,
 		"layered": ["bumper"],
 		"saucer": "BLACK HOLE",
+		"hit_words": {"bumper": ["ZAP!", "BOOM!", "NOVA!", "WARP!", "KA-POW!"], "target": ["BLAST!", "LOCKED!", "DIRECT HIT!"]},
 	},
 	{
 		"id": "paradise_bay",
@@ -22,6 +23,7 @@ const LIST := [
 		"available": true,
 		"layered": ["bumper"],
 		"saucer": "TIKI HUT",
+		"hit_words": {"bumper": ["SPLASH!", "BONK!", "BOING!", "ALOHA!", "KA-BOOM!"], "target": ["SURF'S UP!", "WIPEOUT!", "GNARLY!"]},
 		"saucer_reach": 0.05,
 		"saucer_speed": 5.0,
 		"saucer_kick": Vector2(1.2, -0.9),
@@ -39,6 +41,7 @@ const LIST := [
 		"available": true,
 		"layered": ["bumper"],
 		"saucer": "CASTLE GATE",
+		"hit_words": {"bumper": ["CLANG!", "THUNK!", "DONG!", "BONG!", "HUZZAH!"], "target": ["EN GARDE!", "CLASH!", "FOR GLORY!"]},
 		"saucer_reach": 0.05,
 		"saucer_speed": 5.0,
 		"saucer_kick": Vector2(1.2, -0.9),

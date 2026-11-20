@@ -226,9 +226,9 @@ static func _build_paradise(p: PinPhysics) -> void:
 	# Orbit lanes; the left one has the spinner and feeds the third flipper
 	_arc(p, 0.195, 105.0, 165.0, 8)
 	var l165 := ARC_C + Vector2(cos(deg_to_rad(165.0)), sin(deg_to_rad(165.0))) * 0.195
-	p.add_seg(l165, Vector2(l165.x, 0.72))
+	p.add_seg(l165, Vector2(l165.x, 0.77))
 	_arc(p, 0.195, 42.0, 75.0, 5)
-	p.add_circ(Vector2(l165.x, 0.712), 0.008, K.POST, post)
+	p.add_circ(Vector2(l165.x, 0.762), 0.008, K.POST, post)
 	post += 1
 	p.add_sensor(Rect2(-hw, 0.78, hw + l165.x, 0.03), S_SPINNER)
 	p.add_sensor(Rect2(0.10, 0.96, 0.05, 0.05), S_ORBIT_R)
@@ -268,9 +268,9 @@ static func _build_paradise(p: PinPhysics) -> void:
 	# Main flippers, then the third one above the tiki hut with its feed guide
 	p.add_flipper(Vector2(XC - FLIP_DX, FLIP_Y), -28.0, 28.0, 0)
 	p.add_flipper(Vector2(XC + FLIP_DX, FLIP_Y), 208.0, 152.0, 1)
-	var upper := p.add_flipper(Vector2(-0.19, 0.615), -28.0, 28.0, 2)
+	var upper := p.add_flipper(Vector2(-0.19, 0.665), -28.0, 28.0, 2)
 	upper.length = 0.058
-	p.add_seg(Vector2(-hw, 0.655), Vector2(-0.1862, 0.6221))
+	p.add_seg(Vector2(-hw, 0.705), Vector2(-0.1862, 0.6721))
 
 	# Tiki hut: a pocket in the left wall that holds the ball, then kicks it out
 	p.add_seg(Vector2(-hw, 0.565), Vector2(-0.168, 0.546))

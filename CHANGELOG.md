@@ -7,6 +7,10 @@
 - Alpenglow has its own rules: a shield stays lit once hit; lighting all five opens the
   castle gate for a 10,000 jackpot and a three-ball multiball; ramps made in a row pay more.
 - The global top 100 gains an Alpenglow tab.
+- All tables: comic hit words in star bursts (each table has its own set) and an animated
+  letter-by-letter banner for awards and jackpots.
+- Paradise Bay and Alpenglow: the third flipper sits higher up the table, and the corner
+  covers are plain dark panels with a gold edge instead of busy artwork.
 
 ## 0.2.0
 - New table two, Paradise Bay, built after its concept painting: beach-ball and coconut

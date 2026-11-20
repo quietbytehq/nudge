@@ -21,6 +21,13 @@ var _pause: Label
 var _flash: ColorRect
 var _ball_tex: Texture2D
 var _pops: Array[Label] = []
+var _bangs: Array[Node2D] = []       # comic hit words: star burst + word
+var _bang_life: Array[float] = []
+var _bang_i := 0
+var _letters: Array[Label] = []      # big event banner, one label per character
+var _banner_t := -1.0
+var _banner_n := 0
+var _banner_hue := 0.0
 var _pop_life: Array[float] = []
 var _pop_i := 0
 
@@ -95,6 +102,33 @@ func setup(balls_total: int, table: Dictionary = {}) -> void:
 	_help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 20)
 	_help.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_help.visible = false       # the controls are shown before the game; H brings them up
+
+	for i in 8:
+		var b := Node2D.new()
+		var star := Polygon2D.new()
+		var pts := PackedVector2Array()
+		for k in 24:
+			var rr := 78.0 if k % 2 == 0 else 46.0
+			pts.append(Vector2(cos(TAU * k / 24.0), sin(TAU * k / 24.0) * 0.72) * rr)
+		star.polygon = pts
+		b.add_child(star)
+		var edge := Line2D.new()
+		edge.points = pts
+		edge.closed = true
+		edge.width = 5.0
+		edge.default_color = Color(0.08, 0.02, 0.15)
+		b.add_child(edge)
+		var word := _label("", 40, Color(1, 1, 1), Color(0.08, 0.02, 0.15), 12, true)
+		remove_child(word)
+		b.add_child(word)
+		b.visible = false
+		add_child(b)
+		_bangs.append(b)
+		_bang_life.append(0.0)
+	for i in 44:
+		var ch := _label("", 62, Color(1, 1, 1), Color(0.07, 0.02, 0.14), 14, true)
+		ch.visible = false
+		_letters.append(ch)
 
 	for i in 14:
 		var p := _label("", 34, Color(1, 1, 1), Color(0, 0, 0, 0.95), 9, true)
@@ -182,7 +216,101 @@ func refresh(delta: float, score: int, best: int, balls_left: int, multiplier: i
 			p.scale = Vector2.ONE * (1.0 + 0.6 * maxf(0.0, t - 0.75) * 4.0)
 			if _pop_life[i] <= 0.0:
 				p.visible = false
+	_fx(delta)
 	_canvas.queue_redraw()
+
+
+## Animates the comic hit words and the big banner letters.
+func _fx(delta: float) -> void:
+	for i in _bangs.size():
+		if _bang_life[i] <= 0.0:
+			continue
+		_bang_life[i] -= delta
+		var b := _bangs[i]
+		var t := 1.0 - _bang_life[i] / 0.75           # 0 -> 1 over its life
+		var s := 1.0
+		if t < 0.18:
+			s = lerpf(0.15, 1.35, t / 0.18)            # punch in
+		elif t < 0.32:
+			s = lerpf(1.35, 1.0, (t - 0.18) / 0.14)    # settle
+		b.scale = Vector2.ONE * s
+		b.position.y -= 26.0 * delta
+		b.modulate.a = clampf((1.0 - t) * 4.0, 0.0, 1.0)
+		if _bang_life[i] <= 0.0:
+			b.visible = false
+	if _banner_t >= 0.0:
+		_banner_t += delta
+		var total := 2.3
+		for i in _banner_n:
+			var l := _letters[i]
+			var lt := _banner_t - i * 0.028
+			if lt < 0.0:
+				l.modulate.a = 0.0
+				continue
+			var pop := 1.0 + 0.9 * maxf(0.0, 1.0 - lt / 0.22)
+			l.scale = Vector2.ONE * pop
+			l.position.y = l.get_meta("y0") + sin(_banner_t * 7.0 + i * 0.55) * 7.0
+			l.rotation = sin(_banner_t * 5.0 + i * 0.9) * 0.06
+			l.label_settings.font_color = Color.from_hsv(fmod(_banner_hue + i * 0.035 + _banner_t * 0.25, 1.0), 0.55, 1.0)
+			l.modulate.a = clampf((total - _banner_t) * 3.0, 0.0, 1.0)
+		if _banner_t > total:
+			_banner_t = -1.0
+			for i in _banner_n:
+				_letters[i].visible = false
+
+
+## A comic-book word bursting out where something was hit.
+func bang(at: Vector2, word: String, colour: String = "gold") -> void:
+	if not effects_enabled:
+		return
+	var b := _bangs[_bang_i]
+	_bang_life[_bang_i] = 0.75
+	_bang_i = (_bang_i + 1) % _bangs.size()
+	var col: Color = POP_COLS.get(colour, POP_COLS["gold"])
+	(b.get_child(0) as Polygon2D).color = col
+	var lab := b.get_child(2) as Label
+	lab.text = word
+	lab.label_settings.font_color = Color(1, 1, 1)
+	lab.reset_size()
+	lab.position = -lab.size * 0.5
+	b.position = Vector2(clampf(at.x, 110.0, _size.x - 110.0), clampf(at.y - 70.0, 150.0, _size.y - 80.0))
+	b.rotation = randf_range(-0.28, 0.28)
+	b.scale = Vector2.ONE * 0.15
+	b.modulate.a = 1.0
+	b.visible = true
+
+
+## A big announcement whose letters drop in one by one, wave and change colour.
+func banner(text: String) -> void:
+	if not effects_enabled:
+		toast(text, 2.0)
+		return
+	text = text.to_upper().substr(0, _letters.size())
+	for l in _letters:
+		l.visible = false
+	var font: Font = _display if _display != null else ThemeDB.fallback_font
+	var widths: Array[float] = []
+	var total_w := 0.0
+	for i in text.length():
+		var w := font.get_string_size(text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 62).x
+		widths.append(w)
+		total_w += w
+	var scale_fit := minf(1.0, (_size.x - 80.0) / maxf(total_w, 1.0))
+	var x := (_size.x - total_w * scale_fit) * 0.5
+	for i in text.length():
+		var l := _letters[i]
+		l.text = text[i]
+		l.label_settings.font_size = int(62 * scale_fit)
+		l.reset_size()
+		l.pivot_offset = l.size * 0.5
+		l.position = Vector2(x, 250.0)
+		l.set_meta("y0", 250.0)
+		l.modulate.a = 0.0
+		l.visible = true
+		x += widths[i] * scale_fit
+	_banner_n = text.length()
+	_banner_t = 0.0
+	_banner_hue = randf()
 
 
 func toast(text: String, seconds: float = 2.5) -> void:

@@ -153,7 +153,7 @@ func _lantern(at: Vector2, base: float, height: float) -> void:
 ## The castle over the ball pocket in the left wall: a gatehouse the ball rolls
 ## under, two gate towers, a tall keep and lit windows.
 func _castle() -> void:
-	if sprite("castle.png", TableView.to3(Vector2(-0.205, 0.572), 0.0), 0.2, v) != null:
+	if sprite("castle.png", TableView.to3(Vector2(-0.262, 0.56), 0.0), 0.125, v) != null:
 		var gl := OmniLight3D.new()
 		gl.light_color = Color(1.0, 0.7, 0.35)
 		gl.light_energy = 0.5
