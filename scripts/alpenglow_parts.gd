@@ -14,6 +14,7 @@ var _window: StandardMaterial3D
 var _gold: StandardMaterial3D
 var _slabs: Array[StandardMaterial3D] = []
 var _foliage: Array[StandardMaterial3D] = []
+var _glow_base := 0.45           # resting glow of the peak
 
 
 func _init(view: TableView) -> void:
@@ -45,6 +46,14 @@ func bumper(c: PinPhysics.Circ, kind: String, root: Node3D) -> Array:
 		Vector2(r * 0.98, 0.0065), Vector2(r * 0.8, 0.0065), Vector2(r * 0.8, 0.013)]), 40), v._m_white, Vector3.ZERO, root)
 	var ring := v._torus(r * 1.0, 0.0022, Vector3(0, 0.014, 0), v._m_chrome, root)
 	var m: StandardMaterial3D
+	# the painted cut-out, when the artwork is there: a glowing ring flashes under it
+	var order := ["tower", "barrel", "well", "press", "fountain"]
+	var heights := [0.095, 0.066, 0.07, 0.072, 0.066]
+	var idx := order.find(kind)
+	if idx >= 0 and sprite("bump_%d.png" % idx, Vector3(0, 0.004, 0), heights[idx] * (r / 0.024), root) != null:
+		m = v._lit(Color(1.0, 0.7, 0.3), 0.1)
+		v._torus(r * 1.15, 0.0018, Vector3(0, 0.003, 0), m, root)
+		return [m, ring]
 	if kind == "tower":
 		# a round stone tower with lit windows and a pointed slate roof
 		m = v._lit(Color(1.0, 0.72, 0.3), 0.1)
@@ -144,6 +153,14 @@ func _lantern(at: Vector2, base: float, height: float) -> void:
 ## The castle over the ball pocket in the left wall: a gatehouse the ball rolls
 ## under, two gate towers, a tall keep and lit windows.
 func _castle() -> void:
+	if sprite("castle.png", TableView.to3(Vector2(-0.205, 0.572), 0.0), 0.2, v) != null:
+		var gl := OmniLight3D.new()
+		gl.light_color = Color(1.0, 0.7, 0.35)
+		gl.light_energy = 0.5
+		gl.omni_range = 0.14
+		gl.position = TableView.to3(Vector2(-0.2, 0.515), 0.03)
+		v.add_child(gl)
+		return
 	# gatehouse spanning the pocket, high enough for the ball to pass beneath
 	v._box(Vector3(0.078, 0.024, 0.094), TableView.to3(Vector2(-0.213, 0.516), 0.043), _stone)
 	for k in 7:      # battlements along the front and the lake side
@@ -221,17 +238,32 @@ func _causeway(path: PackedVector3Array, split: int) -> void:
 ## The snowy peak at the back. Its cap glows pink, and flares when the ramp is made.
 func _mountain() -> void:
 	var base := TableView.to3(VOLCANO, VOLCANO_BASE)
-	v._mesh(Parts.lathe(PackedVector2Array([Vector2(0.125, 0.0), Vector2(0.104, 0.03), Vector2(0.08, 0.07),
-		Vector2(0.056, 0.108), Vector2(0.032, 0.146), Vector2(0.012, 0.168), Vector2(0.0, 0.172)]), 9), _rock, base)
-	_lava = v._lit(Color(1.0, 0.5, 0.55), 0.5)
-	_lava.albedo_color = Color(1.0, 0.94, 0.95)
-	_lava.roughness = 0.6
-	v._mesh(Parts.lathe(PackedVector2Array([Vector2(0.066, 0.094), Vector2(0.058, 0.108), Vector2(0.034, 0.146),
-		Vector2(0.0135, 0.169), Vector2(0.0, 0.174)]), 9), _lava, base)
-	for a in [0.5, 1.4, 2.3, 3.4]:       # snow gullies running down the rock
-		v._mesh(Parts.tube(PackedVector3Array([base + Vector3(cos(a) * 0.062, 0.1, sin(a) * 0.062),
-			base + Vector3(cos(a + 0.12) * 0.076, 0.078, sin(a + 0.12) * 0.076),
-			base + Vector3(cos(a + 0.05) * 0.09, 0.055, sin(a + 0.05) * 0.09)]), 0.004, 5), _lava)
+	var painted := sprite("mountain.png", TableView.to3(Vector2(0.0, 1.092), 0.03), 0.3, v, false)
+	if painted != null:
+		# shaded, so its own glow can flare when the ramp is made
+		_lava = StandardMaterial3D.new()
+		_lava.albedo_texture = v._tex("mountain.png")
+		_lava.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		_lava.alpha_scissor_threshold = 0.5
+		_lava.emission_enabled = true
+		_lava.albedo_color = Color(0.18, 0.18, 0.18)
+		_lava.emission = Color.WHITE
+		_lava.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+		_lava.emission_texture = v._tex("mountain.png")
+		painted.material_override = _lava
+		_glow_base = 0.62
+	if painted == null:
+		v._mesh(Parts.lathe(PackedVector2Array([Vector2(0.125, 0.0), Vector2(0.104, 0.03), Vector2(0.08, 0.07),
+			Vector2(0.056, 0.108), Vector2(0.032, 0.146), Vector2(0.012, 0.168), Vector2(0.0, 0.172)]), 9), _rock, base)
+		_lava = v._lit(Color(1.0, 0.5, 0.55), 0.5)
+		_lava.albedo_color = Color(1.0, 0.94, 0.95)
+		_lava.roughness = 0.6
+		v._mesh(Parts.lathe(PackedVector2Array([Vector2(0.066, 0.094), Vector2(0.058, 0.108), Vector2(0.034, 0.146),
+			Vector2(0.0135, 0.169), Vector2(0.0, 0.174)]), 9), _lava, base)
+		for a in [0.5, 1.4, 2.3, 3.4]:       # snow gullies running down the rock
+			v._mesh(Parts.tube(PackedVector3Array([base + Vector3(cos(a) * 0.062, 0.1, sin(a) * 0.062),
+				base + Vector3(cos(a + 0.12) * 0.076, 0.078, sin(a + 0.12) * 0.076),
+				base + Vector3(cos(a + 0.05) * 0.09, 0.055, sin(a + 0.05) * 0.09)]), 0.004, 5), _lava)
 	_volcano_light = OmniLight3D.new()
 	_volcano_light.light_color = Color(1.0, 0.55, 0.6)
 	_volcano_light.light_energy = 0.3
@@ -265,6 +297,8 @@ func _mountain() -> void:
 
 func _tree(at: Vector2, base: float, height: float, kind: int) -> void:
 	var foot := TableView.to3(at, base)
+	if sprite("scene_%d.png" % kind, foot, height * 1.5, v) != null:
+		return
 	if kind == 2:        # a dark cypress
 		v._cyl(0.0022, height * 0.25, foot + Vector3(0, height * 0.125, 0), _wood_dark)
 		v._cyl(height * 0.2, height * 0.85, foot + Vector3(0, height * 0.6, 0), _foliage[2], v, 0.001)
@@ -284,6 +318,8 @@ func _autumn() -> void:
 		_tree(Vector2(side * 0.15, 1.068), 0.034, 0.07, 2)
 		_sphere(0.02, 0.7, _rock, TableView.to3(Vector2(side * 0.205, 0.995), 0.04), v)
 		_lantern(Vector2(side * 0.168, 1.01), 0.034, 0.03)
+	sprite("scene_4.png", TableView.to3(Vector2(-0.2, 0.99), 0.034), 0.09, v)       # chapel
+	sprite("scene_3.png", TableView.to3(Vector2(0.222, 0.955), 0.034), 0.045, v)    # vines
 	# trees and rocks by the castle and at the foot of the causeway
 	_tree(Vector2(-0.245, 0.60), 0.0, 0.05, 2)
 	_sphere(0.008, 0.7, _rock, TableView.to3(Vector2(-0.172, 0.458), 0.003), v)
@@ -295,6 +331,6 @@ func _autumn() -> void:
 func sync(delta: float, time: float) -> void:
 	_erupt = maxf(0.0, _erupt - delta * 0.6)
 	_flame.emission_energy_multiplier = 1.7 + 0.35 * sin(time * 13.0) * sin(time * 5.1)
-	_lava.emission_energy_multiplier = 0.45 + 0.15 * sin(time * 0.9) + _erupt * 3.5
+	_lava.emission_energy_multiplier = _glow_base + 0.06 * sin(time * 0.9) + _erupt * 1.2
 	if _volcano_light != null:
 		_volcano_light.light_energy = 0.3 + 0.1 * sin(time * 0.9) + _erupt * 3.0

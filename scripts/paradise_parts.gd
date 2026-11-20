@@ -90,6 +90,29 @@ func _sphere(r: float, squash: float, mat: Material, pos: Vector3, parent: Node3
 	return mi
 
 
+## Stands a cut-out painting on the table so that it always faces the player.
+## Detailed objects (buildings, trees, themed bumpers) are done this way: the
+## artwork carries the detail and its own lighting. Returns null if the
+## artwork is missing, so callers can fall back to simple shapes.
+func sprite(file: String, foot: Vector3, height: float, parent: Node3D, face_camera: bool = true) -> MeshInstance3D:
+	var tex := v._tex(file)
+	if tex == null:
+		return null
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_texture = tex
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	m.alpha_scissor_threshold = 0.5
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if face_camera:
+		m.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
+	var qm := QuadMesh.new()
+	qm.size = Vector2(height * tex.get_width() / float(tex.get_height()), height)
+	var mi := v._mesh(qm, m, foot + Vector3(0, height * 0.5, 0), parent)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mi
+
+
 # ------------------------------------------------------------------ bumpers
 
 ## Builds a themed bumper under root. Returns [flash material, kicker ring].
