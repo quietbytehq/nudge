@@ -1,8 +1,8 @@
 # Nudge
 
 Nudge is a 3D arcade pinball game by QuietByte, built with Godot 4.7.
-Two tables so far: **Cosmic Drift** (deep space) and **Paradise Bay** (a bright island
-table with a volcano and a third flipper). Four more are planned.
+Two tables so far: **Cosmic Drift** (deep space) and **Paradise Bay** (an island table
+with a pier ramp through a volcano, surfboard targets and a third flipper). Four more are planned.
 
 ## Download
 
@@ -41,6 +41,8 @@ if it runs below about 45 frames per second; press G to choose one yourself.
 
 - `scripts/pin_physics.gd` - custom fixed-step ball and flipper physics
 - `scripts/table_layout.gd` - the layouts of both tables
+- `scripts/paradise_parts.gd` - the themed 3D parts of Paradise Bay
+- `tools/make_paradise_assets.py` - builds Paradise Bay's textures from the raw art
 - `scripts/table_view.gd`, `scripts/parts.gd` - procedural 3D machine and parts
 - `scripts/camera_rig.gd` - follow camera
 - `scripts/app.gd`, `scripts/game.gd`, `scripts/hud.gd` - screens, game flow and display

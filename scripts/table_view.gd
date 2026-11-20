@@ -45,6 +45,7 @@ var _flash_i := 0
 var _hole_mat: StandardMaterial3D
 var _hole_light: OmniLight3D
 var _hole_pulse := 0.0
+var _theme: ParadiseParts         # themed parts, for tables that have them
 var _spinner: Node3D
 var _spin_speed := 0.0
 var _flashers: Array[StandardMaterial3D] = []
@@ -75,6 +76,8 @@ func setup(p: PinPhysics, table_def: Dictionary = {}) -> void:
 	table = table_def
 	rotation.x = deg_to_rad(TILT_DEG)
 	_make_materials()
+	if table.get("theme", "") == "paradise":
+		_theme = ParadiseParts.new(self)
 	_build_cabinet()
 	_build_plastics()
 	_build_segments()
@@ -456,6 +459,10 @@ func _build_segments() -> void:
 
 
 func _build_target(s: PinPhysics.Seg) -> void:
+	if _theme != null and s.id < 5:
+		_target_mats[s.id] = _theme.surfboard(s)
+		_target_flash[s.id] = 0.0
+		return
 	var cols := [Color(1.0, 0.8, 0.1), Color(1.0, 0.3, 0.1), Color(0.1, 0.8, 1.0), Color(0.45, 1.0, 0.25),
 		Color(1.0, 0.15, 0.6), Color(0.6, 0.35, 1.0)]
 	var m := _lit(cols[s.id % cols.size()], 0.08)
@@ -490,6 +497,21 @@ func _build_circles() -> void:
 			var root := Node3D.new()
 			root.position = to3(c.c, 0.0)
 			add_child(root)
+			if _theme != null:
+				var kinds: Array = table.get("bumper_kinds", ["beach"])
+				var kind: String = kinds[c.id % kinds.size()]
+				var res: Array = _theme.bumper(c, kind, root)
+				_bumper_caps.append(res[0])
+				_bumper_rings.append(res[1])
+				var tl := OmniLight3D.new()
+				tl.light_color = Color(1.0, 0.95, 0.9) if kind == "beach" else Color(1.0, 0.6, 0.25)
+				tl.light_energy = 0.03
+				tl.omni_range = 0.24
+				tl.position = Vector3(0, 0.085, 0)
+				root.add_child(tl)
+				_bumper_lights.append(tl)
+				_bumper_flash.append(0.0)
+				continue
 			_cyl(r * 1.36, 0.0008, Vector3(0, 0.0004, 0), _m_black, root)
 			# skirt, body, kicker ring, cap and centre button
 			_mesh(Parts.lathe(PackedVector2Array([Vector2(r * 1.2, 0.0005), Vector2(r * 1.2, 0.003),
@@ -527,6 +549,10 @@ func _build_circles() -> void:
 			_bumper_flash.append(0.0)
 		else:
 			var lit := c.id >= TableLayout.POST_ID
+			if lit and _theme != null:
+				_post_mats[c.id] = _theme.torch(c, post_cols[c.id % post_cols.size()])
+				_post_flash[c.id] = 0.0
+				continue
 			var pm: Material = _m_white
 			if lit:
 				var lm := _lit(post_cols[c.id % post_cols.size()], 0.1)
@@ -557,6 +583,8 @@ func _build_flippers() -> void:
 # ---------------------------------------------------------------- lamps
 
 func _lamp(at: Vector2, col: Color, energy: float, r: float = 0.0068) -> StandardMaterial3D:
+	if _theme != null:
+		return _theme.shell_lamp(at, col, energy, r)
 	var m := _lit(col, energy)
 	var b := _mesh(_bezel, _m_black, to3(at, 0.0003))
 	var d := _mesh(_disc, m, to3(at, 0.0006))
@@ -569,6 +597,8 @@ func _lamp(at: Vector2, col: Color, energy: float, r: float = 0.0068) -> Standar
 
 
 func _arrow(at: Vector2, dir: Vector2, col: Color) -> StandardMaterial3D:
+	if _theme != null:
+		return _theme.shell_lamp(at, col, 0.3, 0.0062)
 	var m := _lit(col, 0.3)
 	var f := dir.normalized()
 	var s := Vector2(-f.y, f.x)
@@ -610,6 +640,9 @@ func _add_lamp(m: StandardMaterial3D, phase: float, speed: float) -> void:
 
 func _build_lamps() -> void:
 	# Playfield lamps that chase and pulse; they also surge on hits.
+	if _theme != null:
+		_theme.lamps()
+		return
 	var hole := TableLayout.HOLE
 	var xc := TableLayout.XC
 	for i in 14:                 # accretion ring around the black hole
@@ -640,13 +673,6 @@ func _build_features() -> void:
 	_torus(0.0195, 0.0014, to3(hole, 0.0016), _m_chrome)
 	_hole_mat = _lit(Color(1.0, 0.45, 0.05), 2.0)
 	_torus(0.024, 0.0022, to3(hole, 0.002), _hole_mat)
-	if table.get("saucer_cone", false):
-		# a volcano cone over the saucer: the ball drops in and is erupted back out
-		var rock := _mat(Color(0.23, 0.15, 0.11), 0.0, 0.9)
-		_mesh(Parts.lathe(PackedVector2Array([Vector2(0.036, 0.0), Vector2(0.031, 0.007), Vector2(0.025, 0.016),
-			Vector2(0.019, 0.026), Vector2(0.0165, 0.029), Vector2(0.0135, 0.0255)]), 32), rock, to3(hole, 0.0))
-		_torus(0.0165, 0.0016, to3(hole, 0.0285), _hole_mat)
-		_cyl(0.0135, 0.001, to3(hole, 0.0245), _hole_mat)
 	_hole_light = OmniLight3D.new()
 	_hole_light.light_color = Color(1.0, 0.5, 0.15)
 	_hole_light.light_energy = 0.4
@@ -666,6 +692,9 @@ func _build_features() -> void:
 			_wire(to3(c - Vector2(hw - 0.003, 0), 0.02), to3(c + Vector2(hw - 0.003, 0), 0.02), 0.0011, _m_chrome)
 			for sx in [-1.0, 1.0]:
 				_wire(to3(c + Vector2(sx * (hw - 0.003), 0), 0.0), to3(c + Vector2(sx * (hw - 0.003), 0), 0.032), 0.0014, _m_chrome)
+
+	if _theme != null:
+		_theme.features()
 
 	# pooled flash lights for impacts
 	for i in 4:
@@ -788,6 +817,12 @@ func spin(speed: float) -> void:
 	_spin_speed = maxf(_spin_speed, speed * 22.0)
 
 
+## The volcano goes off (tables that have one).
+func erupt() -> void:
+	if _theme != null:
+		_theme.erupt()
+
+
 func hole_pulse(amount: float) -> void:
 	_hole_pulse = amount
 
@@ -838,7 +873,7 @@ func sync(delta: float, frac: float) -> void:
 			var tm := _mesh(ImmediateMesh.new(), _m_trail)
 			tm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			_trails[b.id] = {"node": tm, "pts": []}
-		var p3 := to3(b.prev.lerp(b.pos, frac), PinPhysics.BALL_R)
+		var p3 := to3(b.prev.lerp(b.pos, frac), PinPhysics.BALL_R + b.z)
 		var move := p3 - node.position
 		var dist := move.length()
 		if dist > 1e-6 and dist < 0.2:
@@ -853,6 +888,9 @@ func sync(delta: float, frac: float) -> void:
 			_ball_nodes.erase(id)
 			_trails[id]["node"].queue_free()
 			_trails.erase(id)
+
+	if _theme != null:
+		_theme.sync(delta, _time)
 
 	# lamps
 	_excite = maxf(0.0, _excite - delta * 1.6)

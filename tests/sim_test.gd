@@ -45,14 +45,14 @@ func test_launch() -> void:
 	var p := world()
 	var b := p.add_ball(L.BALL_START)
 	for i in 60:
-		p.step(DT)
+		step_all(p)
 	check(b.pos.distance_to(L.BALL_START) < 0.002 and b.vel.length() < 0.02, "ball rests on the plunger")
 	b.vel = Vector2(0, 3.5)
 	var ok := true
 	var left_lane := false
 	var max_y := 0.0
 	for i in 600:
-		p.step(DT)
+		step_all(p)
 		ok = ok and (in_bounds(b) or not b.active)
 		max_y = maxf(max_y, b.pos.y)
 		if b.pos.x < L.LANE_X - 0.02:
@@ -66,7 +66,7 @@ func test_weak_launch() -> void:
 	var p := world()
 	var b := p.add_ball(L.BALL_START, Vector2(0, 1.0))
 	for i in 720:
-		p.step(DT)
+		step_all(p)
 	check(b.pos.distance_to(L.BALL_START) < 0.004, "weak launch rolls back to the plunger")
 
 
@@ -87,7 +87,7 @@ func test_flipper_shot() -> void:
 			if not flipped and b.pos.y < 0.16 and b.vel.y < 0:
 				p.set_flipper(0, true)
 				flipped = true
-			p.step(DT)
+			step_all(p)
 			if flipped and b.vel.y > 0.0:
 				top = maxf(top, b.vel.length())
 		best = maxf(best, top)
@@ -102,7 +102,7 @@ func test_cradle() -> void:
 	p.set_flipper(0, true)
 	var b := p.add_ball(Vector2(-0.195, 0.28))
 	for i in 720:
-		p.step(DT)
+		step_all(p)
 	check(b.active and b.vel.length() < 0.03, "ball settles on a raised flipper (speed %.3f)" % b.vel.length())
 	check(b.pos.y > 0.12 and b.pos.y < 0.2, "ball is held in the cradle (y %.3f)" % b.pos.y)
 	# Release, let the ball roll towards the tip, then flip. Timing sets the shot.
@@ -113,19 +113,31 @@ func test_cradle() -> void:
 		q.set_flipper(0, true)
 		var c := q.add_ball(b.pos)
 		for i in 120:
-			q.step(DT)
+			step_all(q)
 		q.set_flipper(0, false)
 		for i in delay:
-			q.step(DT)
+			step_all(q)
 		q.set_flipper(0, true)
 		var top := 0.0
 		for i in 360:
-			q.step(DT)
+			step_all(q)
 			top = maxf(top, c.pos.y)
 		peaks.append("%.2f" % top)
 		best = maxf(best, top)
 	print("    peak heights by release delay: ", peaks)
 	check(best > 0.4, "ball can be shot from a cradle (best %.2f m)" % best)
+
+
+## Steps the world; a ball taken by the ramp is put down where the rail ends,
+## as the game does after the ride.
+func step_all(w: P) -> void:
+	w.step(DT)
+	for b in w.balls:
+		if b.active and b.held:
+			b.held = false
+			b.pos = Vector2(-0.1935, 0.30)
+			b.prev = b.pos
+			b.vel = Vector2(0.0, -0.55)
 
 
 func test_chaos() -> void:
@@ -142,12 +154,14 @@ func test_chaos() -> void:
 	var t0 := Time.get_ticks_usec()
 	for i in 120 * 300:
 		if p.active_balls().size() < 3:
-			p.add_ball(Vector2(rng.randf_range(-0.2, 0.15), rng.randf_range(0.45, 0.9)),
-				Vector2(rng.randf_range(-2, 2), rng.randf_range(-2, 2)))
+			var at := Vector2(rng.randf_range(-0.2, 0.15), rng.randf_range(0.45, 0.9))
+			var v0 := Vector2(rng.randf_range(-2, 2), rng.randf_range(-2, 2))
+			if not L.is_solid(at):
+				p.add_ball(at, v0)
 		if i % 12 == 0:
 			p.set_flipper(0, rng.randf() < 0.4)
 			p.set_flipper(1, rng.randf() < 0.4)
-		p.step(DT)
+		step_all(p)
 		for b in p.balls:
 			if b.active:
 				ok = ok and in_bounds(b)
@@ -190,6 +204,6 @@ func test_frame_rate_independence() -> void:
 		var p := world()
 		var b := p.add_ball(L.BALL_START, Vector2(0, 3.2))
 		for i in 480:
-			p.step(DT)
+			step_all(p)
 		res.append(b.pos)
 	check(res[0] == res[1], "simulation is deterministic")

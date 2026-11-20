@@ -57,7 +57,7 @@ func setup(balls_total: int, table: Dictionary = {}) -> void:
 	_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_canvas.draw.connect(_draw_canvas)
 
-	# the table's name logo, top centre
+	# the table's name logo, top left under the score
 	if table.has("id"):
 		var logo := Tables.texture(Tables.dir(table["id"]) + "logo.png")
 		if logo != null:
@@ -67,12 +67,11 @@ func setup(balls_total: int, table: Dictionary = {}) -> void:
 			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(tr)
-			tr.anchor_left = 0.5
-			tr.anchor_right = 0.5
-			tr.offset_left = -140
-			tr.offset_right = 140
-			tr.offset_top = 4
-			tr.offset_bottom = 98
+			# tucked under the score plate, clear of the table
+			tr.offset_left = 30
+			tr.offset_right = 300
+			tr.offset_top = 142
+			tr.offset_bottom = 232
 
 	_score = _label("0", 66, Color(1.0, 0.86, 0.15), Color(0.85, 0.1, 0.45), 12, true)
 	_score.position = Vector2(112, 34)

@@ -32,6 +32,11 @@ var top_lit := [false, false, false]
 var toast_time := 0.0
 var nudge_heat := 0.0
 var _held: Array = []            # [ball, seconds left] captured by the black hole
+var _rides: Array = []           # balls riding the ramp: {b, s, v, t, off, erupted}
+var _ramp: PackedVector3Array    # ramp centre line as (x, y, height)
+var _ramp_len: PackedFloat32Array
+var _ramp_crest := 0.0
+var _ramp_erupt := 0.0
 var _hole_cooldown := 0.0
 var hud: Hud
 var _env: Environment
@@ -52,6 +57,15 @@ func _ready() -> void:
 	phys = PinPhysics.new()
 	TableLayout.table_id = table["id"]
 	TableLayout.build(phys)
+	if table.get("ramp", false):
+		_ramp = TableLayout.ramp_path()
+		_ramp_len = PackedFloat32Array([0.0])
+		for i in range(1, _ramp.size()):
+			_ramp_len.append(_ramp_len[i - 1] + _ramp[i].distance_to(_ramp[i - 1]))
+			if _ramp_crest == 0.0 and _ramp[i].z >= 0.0895:
+				_ramp_crest = _ramp_len[i]
+			if _ramp_erupt == 0.0 and _ramp[i].x < 0.03 and _ramp[i].y > 1.0:
+				_ramp_erupt = _ramp_len[i]
 
 	_build_environment()
 	_build_room()
@@ -334,12 +348,14 @@ func _physics_process(delta: float) -> void:
 	phys.step(delta)
 	_handle_events()
 	_hole_cooldown = maxf(0.0, _hole_cooldown - delta)
+	_update_rides(delta)
 	for h in _held.duplicate():
 		h[1] -= delta
 		if h[1] <= 0.0:
 			var hb: PinPhysics.Ball = h[0]
 			hb.held = false
-			hb.vel = Vector2(randf_range(-0.9, 0.9), -1.5)
+			var kick: Vector2 = table.get("saucer_kick", Vector2(0.0, -1.5))
+			hb.vel = kick + Vector2(randf_range(-0.9, 0.9), 0.0) * (1.0 if kick.x == 0.0 else 0.15)
 			_held.erase(h)
 			view.hole_pulse(1.0)
 			view.spark(hb.pos, 3.0)
@@ -437,7 +453,8 @@ func _capture(at: Vector2) -> void:
 	if _hole_cooldown > 0.0:
 		return
 	for b in phys.balls:
-		if b.active and not b.held and b.pos.distance_to(at) < 0.03 and b.vel.length() < 2.6:
+		if b.active and not b.held and b.pos.distance_to(at) < table.get("saucer_reach", 0.03) \
+				and b.vel.length() < table.get("saucer_speed", 2.6):
 			b.held = true
 			b.vel = Vector2.ZERO
 			b.pos = TableLayout.HOLE
@@ -453,11 +470,100 @@ func _capture(at: Vector2) -> void:
 			return
 
 
+## A ball has been taken onto the ramp by the physics; ride it along the path.
+func _start_ride(wp: Vector3) -> void:
+	for b in phys.balls:
+		if not b.active or not b.held:
+			continue
+		var busy := false
+		for r in _rides:
+			busy = busy or r["b"] == b
+		for h in _held:
+			busy = busy or h[0] == b
+		if busy:
+			continue
+		# join the path level with where the ball is, and ease onto its centre line
+		var s0 := 0.0
+		for i in range(1, _ramp.size()):
+			if _ramp[i].y >= b.pos.y:
+				s0 = _ramp_len[i]
+				break
+		_rides.append({"b": b, "s": s0, "v": maxf(b.vel.length(), 0.9), "t": 0.0,
+			"off": b.pos.x - _ramp_at(s0).x, "erupted": false})
+		_add_score(500)
+		_pop(b.pos, 500, "cyan")
+		view.excite(0.6)
+		sfx.play("rollover", wp, 0.9)
+		return
+
+
+func _ramp_at(s: float) -> Vector3:
+	var i := 0
+	while i < _ramp_len.size() - 2 and _ramp_len[i + 1] < s:
+		i += 1
+	var seg := maxf(_ramp_len[i + 1] - _ramp_len[i], 1e-6)
+	return _ramp[i].lerp(_ramp[i + 1], clampf((s - _ramp_len[i]) / seg, 0.0, 1.0))
+
+
+func _update_rides(delta: float) -> void:
+	if _rides.is_empty():
+		return
+	var total := _ramp_len[_ramp_len.size() - 1]
+	for r in _rides.duplicate():
+		var b: PinPhysics.Ball = r["b"]
+		if not b.active:
+			_rides.erase(r)
+			continue
+		var s: float = r["s"]
+		var here := _ramp_at(s)
+		var ahead := _ramp_at(minf(s + 0.01, total))
+		var d := maxf(here.distance_to(ahead), 1e-6)
+		# gravity down the tilted table plus the climb up the ramp itself
+		var v: float = r["v"] - (PinPhysics.GRAVITY * (ahead.y - here.y) / d + 9.0 * (ahead.z - here.z) / d) * delta
+		if s > _ramp_crest:
+			v = clampf(v, 0.5, 1.5)
+		s += v * delta
+		r["s"] = s
+		r["v"] = v
+		r["t"] += delta
+		b.prev = b.pos
+		if s <= 0.0 or s >= total:
+			# rolled back out of the mouth, or dropped off the end of the rail
+			var done := s >= total
+			var at := _ramp_at(clampf(s, 0.0, total))
+			b.pos = Vector2(at.x, at.y)
+			b.prev = b.pos
+			b.z = 0.0
+			b.vel = Vector2(0.0, -0.55) if done else Vector2(0.0, minf(v, -0.4))
+			b.held = false
+			_rides.erase(r)
+			continue
+		var p3 := _ramp_at(s)
+		var blend := maxf(0.0, 1.0 - r["t"] / 0.15)
+		b.pos = Vector2(p3.x + r["off"] * blend, p3.y)
+		b.z = p3.z
+		b.vel = Vector2(ahead.x - here.x, ahead.y - here.y) / d * v
+		if not r["erupted"] and s >= _ramp_erupt:
+			r["erupted"] = true
+			_add_score(2500)
+			_pop(b.pos, 2500, "orange")
+			view.hole_pulse(1.0)
+			view.erupt()
+			view.excite(2.0)
+			cam.add_shake(0.6)
+			_flash_screen(Color(1.0, 0.45, 0.1), 0.25)
+			sfx.play("bonus", view.ball_world(b.pos), 1.0)
+			_toast("VOLCANO ERUPTS  +%s" % _commas(2500 * multiplier), 1.8)
+
+
 func _on_sensor(id: int, wp: Vector3, at: Vector2 = Vector2.ZERO) -> void:
 	if id == TableLayout.S_LANE:
 		return
 	if id == TableLayout.S_HOLE:
 		_capture(TableLayout.HOLE)
+		return
+	if id == TableLayout.S_RAMP:
+		_start_ride(wp)
 		return
 	if id == TableLayout.S_SPINNER:
 		var speed := 1.0
@@ -498,6 +604,7 @@ func _on_drain(wp: Vector3) -> void:
 		return
 	phys.clear_balls()
 	_held.clear()
+	_rides.clear()
 	charging = false
 	ball_num += 1
 	if ball_num > BALLS_PER_GAME:
@@ -621,7 +728,11 @@ func _shot_step() -> void:
 			if not _on_screen(view.ball_world(f.pivot)) or not _on_screen(view.ball_world(f.tip())):
 				_vis_fail_flip += 1
 				break
-	if _frame in [30, 150, 330, 520, 900, 1100]:
+	var ride_check: bool = table.get("ramp", false)
+	if ride_check and _frame == 930:
+		# self-check: send a ball up the pier so the ride is captured too
+		phys.add_ball(Vector2(0.18, 0.57), Vector2(0.0, 2.6))
+	if _frame in [30, 150, 330, 520, 900, 1100] or (ride_check and _frame in [950, 990, 1030, 1070]):
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://").path_join(_shot_dir))
 		var img := get_viewport().get_texture().get_image()
 		if img != null:

@@ -28,6 +28,7 @@ const S_LANE := 20
 const S_HOLE := 30
 const S_SPINNER := 31
 const S_ORBIT_R := 32
+const S_RAMP := 40
 # Lit posts use ids from POST_ID upwards
 const POST_ID := 100
 
@@ -45,7 +46,7 @@ static func _arc(p: PinPhysics, r: float, a0: float, a1: float, steps: int) -> v
 
 static func build(p: PinPhysics) -> void:
 	if table_id == "paradise_bay":
-		HOLE = Vector2(0.015, 1.008)
+		HOLE = Vector2(-0.225, 0.518)
 		_build_paradise(p)
 		return
 	HOLE = Vector2(-0.025, 0.63)
@@ -203,9 +204,11 @@ static func plastics() -> Array:
 	return out
 
 
-## Table two, "Paradise Bay": a volcano at the top, coconut bumpers on the
-## lagoon, surfboard targets down the right side and a third flipper at the
-## end of the pier on the left, fed by the left orbit lane.
+## Table two, "Paradise Bay". Laid out after the concept painting: beach-ball
+## and coconut bumpers at the top, a row of five surfboards across the middle,
+## the tiki hut on the left, and the wooden pier on the right, which is a ramp
+## the ball rides up, through the volcano and down a wire rail to the left
+## inlane. A third flipper sits above the hut.
 static func _build_paradise(p: PinPhysics) -> void:
 	var K := PinPhysics.Kind
 	var hw := W * 0.5
@@ -220,7 +223,7 @@ static func _build_paradise(p: PinPhysics) -> void:
 	var a50 := deg_to_rad(50.0)
 	p.add_seg(Vector2(LANE_X, 0.78), ARC_C + Vector2(cos(a50), sin(a50)) * ARC_R, K.GATE)
 
-	# Orbit lanes; the left one is the pier lane with the spinner
+	# Orbit lanes; the left one has the spinner and feeds the third flipper
 	_arc(p, 0.195, 105.0, 165.0, 8)
 	var l165 := ARC_C + Vector2(cos(deg_to_rad(165.0)), sin(deg_to_rad(165.0))) * 0.195
 	p.add_seg(l165, Vector2(l165.x, 0.72))
@@ -243,15 +246,7 @@ static func _build_paradise(p: PinPhysics) -> void:
 		p.add_seg(f.call(-0.172, 0.33), f.call(-0.172, 0.212), K.RUBBER)
 		p.add_seg(f.call(-0.172, 0.212), f.call(-0.118, 0.185), K.RUBBER)
 		p.add_seg(f.call(-0.118, 0.185), f.call(-0.172, 0.33), K.SLING, side)
-		# beach-ball bumper and an angled target beside it
-		p.add_circ(f.call(-0.16, 0.43), 0.026, K.BUMPER, 3 + side)
-		p.add_seg(f.call(-0.105, 0.365), f.call(-0.085, 0.40), K.TARGET, 8 + side)
-		p.add_circ(f.call(-0.108, 0.358), 0.007, K.POST, post)
-		post += 1
-		# starfish posts
-		for q in [f.call(XC - 0.085, 0.295), f.call(XC - 0.105, 0.535), f.call(XC - 0.06, 0.46)]:
-			p.add_circ(q, 0.007, K.POST, post)
-			post += 1
+		# tiki torches (lit posts) on the sand and in the shallows
 		p.add_seg(f.call(XC - 0.19, 0.19), f.call(XC - 0.19, 0.03))
 		var inl := Rect2(Vector2(-0.215, 0.22), Vector2(0.043, 0.04))
 		var outl := Rect2(Vector2(-0.255, 0.20), Vector2(0.04, 0.04))
@@ -260,33 +255,53 @@ static func _build_paradise(p: PinPhysics) -> void:
 			outl = Rect2(Vector2(mx(-0.215), 0.20), Vector2(0.04, 0.04))
 		p.add_sensor(inl, S_INLANE_R if m else S_INLANE_L)
 		p.add_sensor(outl, S_OUTLANE_R if m else S_OUTLANE_L)
-	for q in [Vector2(XC, 0.48), Vector2(XC, 0.05)]:
+	p.add_circ(Vector2(XC, 0.05), 0.007, K.POST, post)
+	post += 1
+	# tiki torches (lit posts) on the islets in the lagoon, clear of the shot lines
+	for q in [Vector2(-0.115, 0.50), Vector2(0.045, 0.47)]:
 		p.add_circ(q, 0.007, K.POST, post)
 		post += 1
+	# a standing target on the left wall below the hut
+	p.add_seg(Vector2(-0.249, 0.415), Vector2(-0.249, 0.45), K.TARGET, 5)
 
-	# Main flippers
+	# Main flippers, then the third one above the tiki hut with its feed guide
 	p.add_flipper(Vector2(XC - FLIP_DX, FLIP_Y), -28.0, 28.0, 0)
 	p.add_flipper(Vector2(XC + FLIP_DX, FLIP_Y), 208.0, 152.0, 1)
-
-	# Third flipper at the end of the pier, with a guide that feeds it
 	var upper := p.add_flipper(Vector2(-0.19, 0.615), -28.0, 28.0, 2)
 	upper.length = 0.058
 	p.add_seg(Vector2(-hw, 0.655), Vector2(-0.1862, 0.6221))
 
-	# Surfboard targets down the right wall: the upper flipper's shot
+	# Tiki hut: a pocket in the left wall that holds the ball, then kicks it out
+	p.add_seg(Vector2(-hw, 0.565), Vector2(-0.168, 0.546))
+	p.add_seg(Vector2(-hw, 0.487), Vector2(-0.20, 0.475))
+	p.add_sensor(Rect2(HOLE - Vector2(0.025, 0.025), Vector2(0.05, 0.05)), S_HOLE)
+
+	# Surfboard row across the lagoon, backed by a peaked rail so that balls
+	# coming down from the bumpers roll off to either side
 	for i in 5:
-		var y0 := 0.47 + i * 0.042
-		p.add_seg(Vector2(0.199, y0), Vector2(0.199, y0 + 0.032), K.TARGET, i)
+		var x0 := -0.125 + i * 0.04
+		p.add_seg(Vector2(x0, 0.69), Vector2(x0 + 0.04, 0.69), K.TARGET, i)
+	p.add_seg(Vector2(-0.125, 0.69), Vector2(-0.125, 0.70))
+	p.add_seg(Vector2(0.075, 0.69), Vector2(0.075, 0.70))
+	p.add_seg(Vector2(-0.125, 0.70), Vector2(-0.025, 0.735))
+	p.add_seg(Vector2(-0.025, 0.735), Vector2(0.075, 0.70))
 
-	# Coconut bumpers on the lagoon, and two small ones below the volcano
-	p.add_circ(Vector2(XC - 0.055, 0.71), 0.028, K.BUMPER, 0)
-	p.add_circ(Vector2(XC + 0.095, 0.71), 0.028, K.BUMPER, 1)
-	p.add_circ(Vector2(XC + 0.02, 0.61), 0.028, K.BUMPER, 2)
-	p.add_circ(Vector2(XC - 0.03, 0.825), 0.018, K.BUMPER, 5)
-	p.add_circ(Vector2(XC + 0.075, 0.825), 0.018, K.BUMPER, 6)
+	# Beach-ball and coconut bumpers
+	p.add_circ(Vector2(-0.128, 0.79), 0.026, K.BUMPER, 0)
+	p.add_circ(Vector2(-0.055, 0.82), 0.028, K.BUMPER, 1)
+	p.add_circ(Vector2(0.025, 0.795), 0.028, K.BUMPER, 2)
+	p.add_circ(Vector2(0.105, 0.825), 0.026, K.BUMPER, 3)
 
-	# Volcano crater at the very top: drop a ball in to make it erupt
-	p.add_sensor(Rect2(HOLE - Vector2(0.015, 0.015), Vector2(0.03, 0.03)), S_HOLE)
+	# The pier ramp. A jetty runs out into the lagoon and funnels shots from
+	# the left flipper into the pier along the right side. A ball still moving
+	# up-table fast enough at the foot of the pier is taken onto the ramp; a
+	# slow one rolls back out along the jetty.
+	p.add_seg(Vector2(0.045, 0.47), Vector2(0.155, 0.64))
+	p.add_seg(Vector2(0.155, 0.64), Vector2(0.155, 0.782))
+	p.add_seg(Vector2(0.155, 0.782), Vector2(LANE_X, 0.80))
+	p.add_seg(Vector2(0.155, 0.70), Vector2(LANE_X, 0.70))
+	p.add_sensor(Rect2(0.16, 0.61, 0.043, 0.05), S_RAMP)
+	p.sensors[p.sensors.size() - 1].min_vy = 0.9
 
 	# Top rollover lanes
 	p.add_seg(Vector2(-0.065, 0.89), Vector2(-0.065, 0.95))
@@ -299,3 +314,35 @@ static func _build_paradise(p: PinPhysics) -> void:
 	for i in 3:
 		p.add_sensor(Rect2(lane_x[i] - 0.02, 0.90, 0.04, 0.04), S_TOP[i])
 	p.add_sensor(Rect2(LANE_X, 0.06, hw - LANE_X, 0.06), S_LANE)
+
+
+## True for points inside closed-off parts of the table where no ball can be
+## (behind the surfboard row, inside the ramp lane beyond its back wall).
+static func is_solid(q: Vector2) -> bool:
+	if table_id != "paradise_bay":
+		return false
+	if q.x > -0.15 and q.x < 0.10 and q.y > 0.675 and q.y < 0.76:
+		return true
+	return q.x > 0.14 and q.y > 0.55 and q.y < 0.81
+
+
+## Centre line of the Paradise Bay ramp as (x, y, height): up the pier, through
+## the volcano at the back, then down the wire rail to the left inlane.
+static func ramp_path() -> PackedVector3Array:
+	var key := [Vector3(0.180, 0.60, 0.0), Vector3(0.180, 0.64, 0.008), Vector3(0.180, 0.70, 0.034),
+		Vector3(0.180, 0.76, 0.064), Vector3(0.178, 0.80, 0.082),
+		Vector3(0.165, 0.87, 0.088), Vector3(0.135, 0.94, 0.090), Vector3(0.085, 0.995, 0.090),
+		Vector3(0.02, 1.02, 0.090), Vector3(-0.06, 1.015, 0.090), Vector3(-0.13, 0.985, 0.090),
+		Vector3(-0.19, 0.93, 0.089), Vector3(-0.228, 0.86, 0.087), Vector3(-0.243, 0.78, 0.085),
+		Vector3(-0.245, 0.66, 0.080), Vector3(-0.245, 0.52, 0.070), Vector3(-0.243, 0.42, 0.052),
+		Vector3(-0.232, 0.36, 0.034), Vector3(-0.212, 0.325, 0.018), Vector3(-0.1935, 0.30, 0.004)]
+	var out := PackedVector3Array()
+	for i in key.size() - 1:
+		var p0: Vector3 = key[maxi(i - 1, 0)]
+		var p1: Vector3 = key[i]
+		var p2: Vector3 = key[i + 1]
+		var p3: Vector3 = key[mini(i + 2, key.size() - 1)]
+		for j in 6:
+			out.append(p1.cubic_interpolate(p2, p0, p3, j / 6.0))
+	out.append(key[key.size() - 1])
+	return out

@@ -71,11 +71,13 @@ class Ball:
 	var sensors: Dictionary = {}
 	var still_time: float = 0.0
 	var held: bool = false       # captured by a saucer; frozen in place
+	var z: float = 0.0           # height above the playfield (riding a ramp)
 
 
 class Sensor:
 	var rect: Rect2
 	var id: int = 0
+	var min_vy: float = 0.0      # ramp entrance: only a ball moving up-table this fast trips it, and is then held
 
 
 var segs: Array[Seg] = []
@@ -276,7 +278,11 @@ func _post_step(dt: float) -> void:
 			var inside := s.rect.has_point(b.pos)
 			var was: bool = b.sensors.get(s.id, false)
 			if inside and not was:
-				events.append([Ev.SENSOR, b.pos, 1.0, s.id])
+				if s.min_vy <= 0.0:
+					events.append([Ev.SENSOR, b.pos, 1.0, s.id])
+				elif b.vel.y >= s.min_vy and not b.held:
+					b.held = true
+					events.append([Ev.SENSOR, b.pos, b.vel.length(), s.id])
 			b.sensors[s.id] = inside
 
 
