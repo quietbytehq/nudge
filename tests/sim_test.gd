@@ -9,12 +9,15 @@ var fails := 0
 
 
 func _init() -> void:
-	test_launch()
-	test_weak_launch()
-	test_flipper_shot()
-	test_cradle()
-	test_chaos()
-	test_frame_rate_independence()
+	for id in ["deep_space", "paradise_bay"]:
+		print("===== table: ", id)
+		L.table_id = id
+		test_launch()
+		test_weak_launch()
+		test_flipper_shot()
+		test_cradle()
+		test_chaos()
+		test_frame_rate_independence()
 	print("RESULT: ", "PASS" if fails == 0 else "FAIL (%d)" % fails)
 	quit(1 if fails > 0 else 0)
 

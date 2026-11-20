@@ -38,7 +38,7 @@ var _charge := -1.0
 var _size := Vector2(1600, 900)
 
 
-func setup(balls_total: int) -> void:
+func setup(balls_total: int, table: Dictionary = {}) -> void:
 	layer = 5
 	_balls_total = balls_total
 	_display = Tables.font("Bungee-Regular")
@@ -56,6 +56,23 @@ func setup(balls_total: int) -> void:
 	add_child(_canvas)
 	_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_canvas.draw.connect(_draw_canvas)
+
+	# the table's name logo, top centre
+	if table.has("id"):
+		var logo := Tables.texture(Tables.dir(table["id"]) + "logo.png")
+		if logo != null:
+			var tr := TextureRect.new()
+			tr.texture = logo
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(tr)
+			tr.anchor_left = 0.5
+			tr.anchor_right = 0.5
+			tr.offset_left = -140
+			tr.offset_right = 140
+			tr.offset_top = 4
+			tr.offset_bottom = 98
 
 	_score = _label("0", 66, Color(1.0, 0.86, 0.15), Color(0.85, 0.1, 0.45), 12, true)
 	_score.position = Vector2(112, 34)

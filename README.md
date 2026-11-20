@@ -1,7 +1,8 @@
 # Nudge
 
 Nudge is a 3D arcade pinball game by QuietByte, built with Godot 4.7.
-Table one is **Deep Space**; five more tables are planned.
+Two tables so far: **Cosmic Drift** (deep space) and **Paradise Bay** (a bright island
+table with a volcano and a third flipper). Four more are planned.
 
 ## Download
 
@@ -34,12 +35,12 @@ if it runs below about 45 frames per second; press G to choose one yourself.
     godot --path .                                        # run
     godot --headless --path . -s tests/sim_test.gd        # physics tests
     godot --headless --path . --export-release "Linux" build/linux/nudge.x86_64
-    packaging/build_linux.sh 0.1.1                        # tar.gz, .deb, AppImage
+    packaging/build_linux.sh 0.2.0                        # tar.gz, .deb, AppImage
 
 ## Layout
 
 - `scripts/pin_physics.gd` - custom fixed-step ball and flipper physics
-- `scripts/table_layout.gd` - the Deep Space table layout
+- `scripts/table_layout.gd` - the layouts of both tables
 - `scripts/table_view.gd`, `scripts/parts.gd` - procedural 3D machine and parts
 - `scripts/camera_rig.gd` - follow camera
 - `scripts/app.gd`, `scripts/game.gd`, `scripts/hud.gd` - screens, game flow and display

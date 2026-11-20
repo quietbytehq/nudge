@@ -37,6 +37,7 @@ var _name_score: Label
 var _name_text := ""
 var _pending_score := 0
 var _pending_table := ""
+var _shot_table := 0
 var _flash: ColorRect
 var _cards: Array[Panel] = []
 var _hint: Label
@@ -54,6 +55,8 @@ func _ready() -> void:
 	_setup_input()
 	Settings.load_all()
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--table="):
+			_shot_table = clampi(int(arg.trim_prefix("--table=")), 0, Tables.LIST.size() - 1)
 		if arg.begins_with("--quality="):
 			Settings.quality = clampi(int(arg.trim_prefix("--quality=")), 0, 2)
 			Settings.quality_auto = false
@@ -256,7 +259,7 @@ func _build_intro() -> void:
 	else:
 		_title = _text(TITLE, 190, Color(1.0, 0.9, 0.3), Color(1.0, 0.25, 0.5), 22, Color(0.2, 0.5, 1.0, 0.75), true)
 		_place(_title, _intro, 0.30)
-	var sub := _text("TABLE ONE   *   DEEP SPACE", 30, Color(1.0, 0.85, 0.3), Color(0.6, 0.1, 0.5), 10, Color(0, 0, 0, 0), true)
+	var sub := _text("COSMIC DRIFT   *   PARADISE BAY", 30, Color(1.0, 0.85, 0.3), Color(0.6, 0.1, 0.5), 10, Color(0, 0, 0, 0), true)
 	_place(sub, _intro, 0.60)
 	for y in [0.775, 0.905]:
 		var line := ColorRect.new()
@@ -349,10 +352,26 @@ func _build_select() -> void:
 		var num := _text(str(i + 1), 44, CARD_COLS[i % CARD_COLS.size()], Color(0, 0, 0, 0.95), 12, Color(0, 0, 0, 0), true)
 		card.add_child(num)
 		num.position = Vector2(18, 8)
+		var card_logo := Tables.texture(Tables.dir(t["id"]) + "logo.png") if t["available"] else null
+		if card_logo != null:
+			var lr := TextureRect.new()
+			lr.texture = card_logo
+			lr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			lr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			card.add_child(lr)
+			lr.anchor_left = 0.08
+			lr.anchor_right = 0.92
+			lr.anchor_top = 0.52
+			lr.anchor_bottom = 1.0
+			lr.offset_left = 0
+			lr.offset_right = 0
+			lr.offset_top = 0
+			lr.offset_bottom = -6
 		var name_l := _text(t["name"].to_upper(), 34, Color(1, 1, 1) if t["available"] else CARD_COLS[i % CARD_COLS.size()].lerp(Color(0.5, 0.5, 0.6), 0.35), Color(0, 0, 0, 0.95), 12, Color(0, 0, 0, 0), true)
 		card.add_child(name_l)
 		name_l.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, 12)
 		name_l.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		name_l.visible = card_logo == null
 		if not t["available"]:
 			var q := _text("?", 110, CARD_COLS[i % CARD_COLS.size()].darkened(0.25), Color(0, 0, 0, 0.9), 10, Color(0, 0, 0, 0), true)
 			card.add_child(q)
@@ -697,7 +716,7 @@ func _process(delta: float) -> void:
 		_show_howto(0)
 	elif _frame == 230:
 		_save_shot("howto")
-		_start_game(0)
+		_start_game(_shot_table)
 
 
 func _save_shot(shot_name: String) -> void:

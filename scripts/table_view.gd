@@ -235,7 +235,7 @@ func _build_cabinet() -> void:
 	# The printed artwork sits on its own sheet so the whole image maps onto
 	# the playfield (top of the image = far end of the table).
 	# the art is kept a little darker than the parts so obstacles stand out
-	var pf := _mat(Color(0.74, 0.74, 0.76), 0.0, 0.22)
+	var pf := _mat(Color(0.72, 0.72, 0.72) if table.get("bright", false) else Color(0.74, 0.74, 0.76), 0.0, 0.22)
 	if art != null:
 		pf.albedo_texture = art
 		pf.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
@@ -304,7 +304,7 @@ func _build_cabinet() -> void:
 		_screw(Vector2(cx + 0.047, 0.007), 0.0352)
 
 	# printed instruction cards
-	for d in [[-0.175, "DEEP SPACE\n\nSPACE  launch\nSHIFT  flippers\nA D W  nudge"], [0.125, "SCORING\n\nBLACK HOLE  1,000\nTARGET  500\nTOP LANES  x BONUS"]]:
+	for d in [[-0.175, "%s\n\nSPACE  launch\nSHIFT  flippers\nA D W  nudge" % str(table.get("name", "NUDGE")).to_upper()], [0.125, "SCORING\n\n%s  1,000\nTARGET  500\nTOP LANES  x BONUS" % table.get("saucer", "BLACK HOLE")]]:
 		var lbl := Label3D.new()
 		lbl.text = d[1]
 		lbl.font_size = 40
@@ -482,6 +482,7 @@ func _build_circles() -> void:
 		Color(0.95, 0.75, 0.3), Color(0.1, 0.8, 1.0), Color(0.45, 1.0, 0.25), Color(0.6, 0.3, 1.0)]
 	var post_cols := [Color(0.1, 0.6, 1.0), Color(1.0, 0.15, 0.7), Color(0.25, 1.0, 0.45), Color(1.0, 0.8, 0.1),
 		Color(1.0, 0.4, 0.1), Color(0.6, 0.35, 1.0)]
+	cols = table.get("bumper_cols", cols)
 	for c in phys.circs:
 		var r := c.r
 		if c.kind == K.BUMPER:
@@ -639,6 +640,13 @@ func _build_features() -> void:
 	_torus(0.0195, 0.0014, to3(hole, 0.0016), _m_chrome)
 	_hole_mat = _lit(Color(1.0, 0.45, 0.05), 2.0)
 	_torus(0.024, 0.0022, to3(hole, 0.002), _hole_mat)
+	if table.get("saucer_cone", false):
+		# a volcano cone over the saucer: the ball drops in and is erupted back out
+		var rock := _mat(Color(0.23, 0.15, 0.11), 0.0, 0.9)
+		_mesh(Parts.lathe(PackedVector2Array([Vector2(0.036, 0.0), Vector2(0.031, 0.007), Vector2(0.025, 0.016),
+			Vector2(0.019, 0.026), Vector2(0.0165, 0.029), Vector2(0.0135, 0.0255)]), 32), rock, to3(hole, 0.0))
+		_torus(0.0165, 0.0016, to3(hole, 0.0285), _hole_mat)
+		_cyl(0.0135, 0.001, to3(hole, 0.0245), _hole_mat)
 	_hole_light = OmniLight3D.new()
 	_hole_light.light_color = Color(1.0, 0.5, 0.15)
 	_hole_light.light_energy = 0.4

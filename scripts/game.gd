@@ -50,6 +50,7 @@ func _ready() -> void:
 	_load_best()
 
 	phys = PinPhysics.new()
+	TableLayout.table_id = table["id"]
 	TableLayout.build(phys)
 
 	_build_environment()
@@ -109,6 +110,10 @@ func _build_environment() -> void:
 	env.ssao_enabled = true
 	env.ssao_radius = 0.05
 	env.ssao_intensity = 2.6
+	if table.get("bright", false):
+		# a sunny table: lift the exposure and the fill light
+		env.tonemap_exposure = 1.08
+		env.ambient_light_energy = 0.26
 	_env = env
 	var we := WorldEnvironment.new()
 	we.environment = env
@@ -208,7 +213,7 @@ func apply_quality() -> void:
 func _build_hud() -> void:
 	hud = Hud.new()
 	add_child(hud)
-	hud.setup(BALLS_PER_GAME)
+	hud.setup(BALLS_PER_GAME, table)
 
 
 # ---------------------------------------------------------------- game flow
@@ -302,6 +307,7 @@ func _physics_process(delta: float) -> void:
 	if paused:
 		return
 	phys.set_flipper(0, Input.is_action_pressed("flipper_left") and not game_over)
+	phys.set_flipper(2, Input.is_action_pressed("flipper_left") and not game_over)
 	phys.set_flipper(1, Input.is_action_pressed("flipper_right") and not game_over)
 	if _shot_dir != "":
 		_autoplay()
@@ -427,7 +433,7 @@ func _capture(at: Vector2) -> void:
 			view.hole_pulse(1.0)
 			view.excite(1.5)
 			sfx.play("bonus", view.ball_world(at), 0.8)
-			_toast("BLACK HOLE  +%s" % _commas(1000 * multiplier), 1.6)
+			_toast("%s  +%s" % [table.get("saucer", "BLACK HOLE"), _commas(1000 * multiplier)], 1.6)
 			return
 
 
@@ -569,10 +575,13 @@ func _autoplay() -> void:
 		for b in phys.balls:
 			if b.active and b.pos.y < 0.2 and b.vel.y < 0.0 and absf(b.pos.x - f.pivot.x) < 0.1:
 				press = true
+		if f.id == 2:
+			continue
 		if press or (f.pressed and _tick % 30 != 0):
 			phys.set_flipper(f.id, true)
 		else:
 			phys.set_flipper(f.id, false)
+	phys.set_flipper(2, phys.flippers[0].pressed)
 
 
 func _on_screen(world_pos: Vector3) -> bool:
@@ -591,7 +600,7 @@ func _shot_step() -> void:
 				_vis_fail_ball += 1
 				break
 		for f in phys.flippers:
-			if not cam.flippers_needed:
+			if not cam.flippers_needed or f.id >= 2:
 				break
 			if not _on_screen(view.ball_world(f.pivot)) or not _on_screen(view.ball_world(f.tip())):
 				_vis_fail_flip += 1

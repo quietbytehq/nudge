@@ -1,6 +1,6 @@
 class_name TableLayout
 extends RefCounted
-## Table one layout ("Deep Space"). Coordinates are metres on the playfield
+## Table layouts. Table one ("Cosmic Drift") is described first. Coordinates are metres on the playfield
 ## plane (x right, y up-table) and are placed to sit on the printed artwork:
 ## sun at the top, black hole in the middle, Jupiter left, Saturn right,
 ## Earth between the flippers.
@@ -14,7 +14,9 @@ const FLIP_DX := 0.088
 const ARC_C := Vector2(0.0, 0.815)
 const ARC_R := 0.255
 const BALL_START := Vector2(0.23, 0.0745)
-const HOLE := Vector2(-0.025, 0.63)
+## Which table to build, and where its ball-swallowing feature sits.
+static var table_id := "deep_space"
+static var HOLE := Vector2(-0.025, 0.63)
 
 # Sensor ids
 const S_TOP := [0, 1, 2]
@@ -42,6 +44,11 @@ static func _arc(p: PinPhysics, r: float, a0: float, a1: float, steps: int) -> v
 
 
 static func build(p: PinPhysics) -> void:
+	if table_id == "paradise_bay":
+		HOLE = Vector2(0.015, 1.008)
+		_build_paradise(p)
+		return
+	HOLE = Vector2(-0.025, 0.63)
 	var K := PinPhysics.Kind
 	var hw := W * 0.5
 	var post := POST_ID
@@ -194,3 +201,101 @@ static func plastics() -> Array:
 		c.append(Vector2(sg * 0.04, H + 0.012))
 		out.append([c, 0.0])
 	return out
+
+
+## Table two, "Paradise Bay": a volcano at the top, coconut bumpers on the
+## lagoon, surfboard targets down the right side and a third flipper at the
+## end of the pier on the left, fed by the left orbit lane.
+static func _build_paradise(p: PinPhysics) -> void:
+	var K := PinPhysics.Kind
+	var hw := W * 0.5
+	var post := POST_ID
+
+	# Outer walls, shooter lane, top arch and one-way gate
+	p.add_seg(Vector2(-hw, -0.06), Vector2(-hw, ARC_C.y))
+	p.add_seg(Vector2(hw, 0.0), Vector2(hw, ARC_C.y))
+	p.add_seg(Vector2(LANE_X, -0.06), Vector2(LANE_X, 0.78))
+	p.add_seg(Vector2(LANE_X, 0.06), Vector2(hw, 0.06))
+	p.set_arc(ARC_C, ARC_R)
+	var a50 := deg_to_rad(50.0)
+	p.add_seg(Vector2(LANE_X, 0.78), ARC_C + Vector2(cos(a50), sin(a50)) * ARC_R, K.GATE)
+
+	# Orbit lanes; the left one is the pier lane with the spinner
+	_arc(p, 0.195, 105.0, 165.0, 8)
+	var l165 := ARC_C + Vector2(cos(deg_to_rad(165.0)), sin(deg_to_rad(165.0))) * 0.195
+	p.add_seg(l165, Vector2(l165.x, 0.72))
+	_arc(p, 0.195, 42.0, 75.0, 5)
+	p.add_circ(Vector2(l165.x, 0.712), 0.008, K.POST, post)
+	post += 1
+	p.add_sensor(Rect2(-hw, 0.78, hw + l165.x, 0.03), S_SPINNER)
+	p.add_sensor(Rect2(0.10, 0.96, 0.05, 0.05), S_ORBIT_R)
+
+	# Lower playfield, built for the left and mirrored to the right
+	for side in 2:
+		var m := side == 1
+		var f := func(x: float, y: float) -> Vector2:
+			return Vector2(mx(x) if m else x, y)
+		p.add_seg(f.call(-0.255, 0.40), f.call(-0.222, 0.335))
+		p.add_seg(f.call(-0.215, 0.295), f.call(-0.215, 0.19))
+		p.add_seg(f.call(-0.215, 0.19), f.call(-0.1092, 0.1371))
+		p.add_circ(f.call(-0.215, 0.30), 0.007, K.POST, post)
+		post += 1
+		p.add_seg(f.call(-0.172, 0.33), f.call(-0.172, 0.212), K.RUBBER)
+		p.add_seg(f.call(-0.172, 0.212), f.call(-0.118, 0.185), K.RUBBER)
+		p.add_seg(f.call(-0.118, 0.185), f.call(-0.172, 0.33), K.SLING, side)
+		# beach-ball bumper and an angled target beside it
+		p.add_circ(f.call(-0.16, 0.43), 0.026, K.BUMPER, 3 + side)
+		p.add_seg(f.call(-0.105, 0.365), f.call(-0.085, 0.40), K.TARGET, 8 + side)
+		p.add_circ(f.call(-0.108, 0.358), 0.007, K.POST, post)
+		post += 1
+		# starfish posts
+		for q in [f.call(XC - 0.085, 0.295), f.call(XC - 0.105, 0.535), f.call(XC - 0.06, 0.46)]:
+			p.add_circ(q, 0.007, K.POST, post)
+			post += 1
+		p.add_seg(f.call(XC - 0.19, 0.19), f.call(XC - 0.19, 0.03))
+		var inl := Rect2(Vector2(-0.215, 0.22), Vector2(0.043, 0.04))
+		var outl := Rect2(Vector2(-0.255, 0.20), Vector2(0.04, 0.04))
+		if m:
+			inl = Rect2(Vector2(mx(-0.172), 0.22), Vector2(0.043, 0.04))
+			outl = Rect2(Vector2(mx(-0.215), 0.20), Vector2(0.04, 0.04))
+		p.add_sensor(inl, S_INLANE_R if m else S_INLANE_L)
+		p.add_sensor(outl, S_OUTLANE_R if m else S_OUTLANE_L)
+	for q in [Vector2(XC, 0.48), Vector2(XC, 0.05)]:
+		p.add_circ(q, 0.007, K.POST, post)
+		post += 1
+
+	# Main flippers
+	p.add_flipper(Vector2(XC - FLIP_DX, FLIP_Y), -28.0, 28.0, 0)
+	p.add_flipper(Vector2(XC + FLIP_DX, FLIP_Y), 208.0, 152.0, 1)
+
+	# Third flipper at the end of the pier, with a guide that feeds it
+	var upper := p.add_flipper(Vector2(-0.19, 0.615), -28.0, 28.0, 2)
+	upper.length = 0.058
+	p.add_seg(Vector2(-hw, 0.655), Vector2(-0.1862, 0.6221))
+
+	# Surfboard targets down the right wall: the upper flipper's shot
+	for i in 5:
+		var y0 := 0.47 + i * 0.042
+		p.add_seg(Vector2(0.199, y0), Vector2(0.199, y0 + 0.032), K.TARGET, i)
+
+	# Coconut bumpers on the lagoon, and two small ones below the volcano
+	p.add_circ(Vector2(XC - 0.055, 0.71), 0.028, K.BUMPER, 0)
+	p.add_circ(Vector2(XC + 0.095, 0.71), 0.028, K.BUMPER, 1)
+	p.add_circ(Vector2(XC + 0.02, 0.61), 0.028, K.BUMPER, 2)
+	p.add_circ(Vector2(XC - 0.03, 0.825), 0.018, K.BUMPER, 5)
+	p.add_circ(Vector2(XC + 0.075, 0.825), 0.018, K.BUMPER, 6)
+
+	# Volcano crater at the very top: drop a ball in to make it erupt
+	p.add_sensor(Rect2(HOLE - Vector2(0.015, 0.015), Vector2(0.03, 0.03)), S_HOLE)
+
+	# Top rollover lanes
+	p.add_seg(Vector2(-0.065, 0.89), Vector2(-0.065, 0.95))
+	p.add_seg(Vector2(0.015, 0.89), Vector2(0.015, 0.95))
+	p.add_circ(Vector2(-0.065, 0.885), 0.006, K.POST, post)
+	post += 1
+	p.add_circ(Vector2(0.015, 0.885), 0.006, K.POST, post)
+	post += 1
+	var lane_x := [-0.105, -0.025, 0.055]
+	for i in 3:
+		p.add_sensor(Rect2(lane_x[i] - 0.02, 0.90, 0.04, 0.04), S_TOP[i])
+	p.add_sensor(Rect2(LANE_X, 0.06, hw - LANE_X, 0.06), S_LANE)
