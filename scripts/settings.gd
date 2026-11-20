@@ -9,6 +9,7 @@ const TOP_SIZE := 10
 
 static var quality := 2            # 0 low, 1 medium, 2 high
 static var quality_auto := true    # lower the quality automatically if the game runs slowly
+static var online := true          # post top-ten scores to the global board
 
 
 static func _cfg() -> ConfigFile:
@@ -21,12 +22,14 @@ static func load_all() -> void:
 	var cf := _cfg()
 	quality = clampi(int(cf.get_value("settings", "quality", 2)), 0, 2)
 	quality_auto = bool(cf.get_value("settings", "quality_auto", true))
+	online = bool(cf.get_value("settings", "online", true))
 
 
 static func save_quality() -> void:
 	var cf := _cfg()
 	cf.set_value("settings", "quality", quality)
 	cf.set_value("settings", "quality_auto", quality_auto)
+	cf.set_value("settings", "online", online)
 	cf.save(PATH)
 
 

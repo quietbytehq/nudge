@@ -24,6 +24,7 @@ apps:
       - opengl
       - audio-playback
       - joystick
+      - network
 
 parts:
   nudge-pinball:

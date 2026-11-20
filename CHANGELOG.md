@@ -10,6 +10,8 @@
 - Near-side obstacles: a tiki-drum bumper below the hut, a harbour-buoy bumper at the foot
   of the jetty, a rock-islet bumper in the lagoon and two standing shell targets.
 - Paradise Bay has its own music and sounds, and its own softer lighting.
+- Global top 100: a top-ten score can also be posted to nudge.quietbytehq.uk (name, score and
+  table only). The name screen says so, and Tab keeps the score on this computer instead.
 - Table one is now called Cosmic Drift.
 - Each table's name logo is shown on its table-select card and on the play screen.
 

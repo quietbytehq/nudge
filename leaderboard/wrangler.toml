@@ -1,0 +1,15 @@
+# Nudge global top 100: a Cloudflare Worker with a D1 database.
+name = "nudge-scores"
+main = "src/worker.js"
+compatibility_date = "2026-01-01"
+workers_dev = false
+routes = [{ pattern = "nudge.quietbytehq.uk", custom_domain = true }]
+
+[vars]
+MIN_SCORE = "100000"
+MAX_SCORE = "50000000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nudge-scores"
+database_id = "REPLACE_WITH_DATABASE_ID"

@@ -37,6 +37,8 @@ var _name_score: Label
 var _name_text := ""
 var _pending_score := 0
 var _pending_table := ""
+var _pending_table_id := ""
+var _online_hint: Label
 var _shot_table := 0
 var _flash: ColorRect
 var _cards: Array[Panel] = []
@@ -513,7 +515,13 @@ func _input(event: InputEvent) -> void:
 				var who := _name_text.strip_edges()
 				if who == "":
 					who = "PLAYER"
+				if Settings.online:
+					Online.submit(self, who, _pending_score, _pending_table_id)
 				_show_top(Settings.add_top(who, _pending_score, _pending_table))
+			elif event.keycode == KEY_TAB:
+				Settings.online = not Settings.online
+				Settings.save_quality()
+				_refresh_online_hint()
 			elif event.keycode == KEY_BACKSPACE:
 				_name_text = _name_text.substr(0, maxi(0, _name_text.length() - 1))
 			elif event.unicode >= 32 and event.unicode < 127 and _name_text.length() < 12:
@@ -660,8 +668,17 @@ func _build_name() -> void:
 	_name_label = _text("_", 70, Color(1, 1, 1), Color(0.6, 0.1, 0.8), 14, Color(0, 0, 0, 0), true)
 	_place(_name_label, _name_panel, 0.64)
 	var hint := _text("Type your name, then press Enter", 22, Color(0.8, 0.92, 1.0), Color(0, 0, 0, 0.9), 7)
-	_place(hint, _name_panel, 0.82)
+	_place(hint, _name_panel, 0.80)
+	_online_hint = _text("", 18, Color(1.0, 0.85, 0.35), Color(0, 0, 0, 0.9), 6)
+	_place(_online_hint, _name_panel, 0.88)
 	_name_panel.visible = false
+
+
+func _refresh_online_hint() -> void:
+	if Settings.online:
+		_online_hint.text = "Your name and score will also be posted to the global top 100 at %s  -  Tab: keep it on this computer only" % Online.SITE
+	else:
+		_online_hint.text = "This score stays on this computer  -  Tab: also post it to the global top 100 at %s" % Online.SITE
 
 
 func _on_game_finished(final_score: int) -> void:
@@ -669,6 +686,8 @@ func _on_game_finished(final_score: int) -> void:
 		return
 	_pending_score = final_score
 	_pending_table = game.table["name"]
+	_pending_table_id = game.table["id"]
+	_refresh_online_hint()
 	game.queue_free()
 	game = null
 	screen = Screen.NAME
@@ -713,6 +732,15 @@ func _process(delta: float) -> void:
 		_show_top(-1)
 	elif _frame == 190:
 		_save_shot("topten")
+		# show the name-entry screen too, without recording anything
+		_hide_all()
+		screen = Screen.NAME
+		_name_text = "ACE"
+		_name_score.text = Hud.commas(123450)
+		_refresh_online_hint()
+		_name_panel.visible = true
+	elif _frame == 210:
+		_save_shot("name")
 		_show_howto(0)
 	elif _frame == 230:
 		_save_shot("howto")

@@ -51,3 +51,19 @@ if it runs below about 45 frames per second; press G to choose one yourself.
 ## Licence
 
 Apache-2.0. See `LICENSE` and `NOTICE` for third-party credits.
+
+## Global top 100
+
+A score of 100,000 or more can be posted to the global board at
+<https://nudge.quietbytehq.uk>. Only the name the player types, the score, the table
+and the game version are sent, and the name screen offers Tab to keep a score local.
+
+The board is a small Cloudflare Worker with a D1 database, in `leaderboard/`:
+
+    cd leaderboard
+    npx wrangler login      # once
+    ./deploy.sh
+
+The game is open source, so a posted score cannot be proved genuine. The service
+filters names, limits how often one address can post and rejects impossible scores;
+`deploy.sh` saves a private admin link for removing anything else.
