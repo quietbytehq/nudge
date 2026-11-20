@@ -258,11 +258,12 @@ static func _build_paradise(p: PinPhysics) -> void:
 	p.add_circ(Vector2(XC, 0.05), 0.007, K.POST, post)
 	post += 1
 	# tiki torches (lit posts) on the islets in the lagoon, clear of the shot lines
-	for q in [Vector2(-0.115, 0.50), Vector2(0.045, 0.47)]:
+	for q in [Vector2(0.045, 0.47)]:
 		p.add_circ(q, 0.007, K.POST, post)
 		post += 1
-	# a standing target on the left wall below the hut
-	p.add_seg(Vector2(-0.249, 0.415), Vector2(-0.249, 0.45), K.TARGET, 5)
+	# two angled shell targets that split the lagoon into shot lanes
+	p.add_seg(Vector2(-0.112, 0.385), Vector2(-0.094, 0.415), K.TARGET, 5)
+	p.add_seg(Vector2(0.057, 0.385), Vector2(0.039, 0.415), K.TARGET, 6)
 
 	# Main flippers, then the third one above the tiki hut with its feed guide
 	p.add_flipper(Vector2(XC - FLIP_DX, FLIP_Y), -28.0, 28.0, 0)
@@ -291,6 +292,13 @@ static func _build_paradise(p: PinPhysics) -> void:
 	p.add_circ(Vector2(-0.055, 0.82), 0.028, K.BUMPER, 1)
 	p.add_circ(Vector2(0.025, 0.795), 0.028, K.BUMPER, 2)
 	p.add_circ(Vector2(0.105, 0.825), 0.026, K.BUMPER, 3)
+	# near-side bumpers, tucked between the shot lanes: a tiki drum below the
+	# hut, a harbour buoy at the foot of the jetty, a rock islet in the lagoon
+	p.add_circ(Vector2(-0.214, 0.412), 0.02, K.BUMPER, 4)
+	p.add_circ(Vector2(0.16, 0.388), 0.02, K.BUMPER, 5)
+	p.add_seg(Vector2(-hw, 0.455), Vector2(-0.2275, 0.4285))   # no gap between the drum and the wall
+	p.add_seg(Vector2(LANE_X, 0.445), Vector2(0.173, 0.405))     # nor between the buoy and the lane wall
+	p.add_circ(Vector2(-0.125, 0.515), 0.02, K.BUMPER, 6)
 
 	# The pier ramp. A jetty runs out into the lagoon and funnels shots from
 	# the left flipper into the pier along the right side. A ball still moving

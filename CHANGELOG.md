@@ -7,6 +7,8 @@
 - The wooden pier is a ramp the ball rides: up the pier, through the volcano (which
   erupts) and down a chrome wire rail to the left inlane.
 - A third flipper above the tiki hut, worked by the left flipper key.
+- Near-side obstacles: a tiki-drum bumper below the hut, a harbour-buoy bumper at the foot
+  of the jetty, a rock-islet bumper in the lagoon and two standing shell targets.
 - Paradise Bay has its own music and sounds, and its own softer lighting.
 - Table one is now called Cosmic Drift.
 - Each table's name logo is shown on its table-select card and on the play screen.

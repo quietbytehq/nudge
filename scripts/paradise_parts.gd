@@ -100,6 +100,44 @@ func bumper(c: PinPhysics.Circ, kind: String, root: Node3D) -> Array:
 		Vector2(r * 0.98, 0.0065), Vector2(r * 0.8, 0.0065), Vector2(r * 0.8, 0.013)]), 40), v._m_white, Vector3.ZERO, root)
 	var ring := v._torus(r * 1.0, 0.0022, Vector3(0, 0.014, 0), v._m_chrome, root)
 	var m: StandardMaterial3D
+	if kind == "drum":
+		# a tiki drum: wooden shell, rope lacing and a skin that glows when struck
+		m = v._lit(Color(1.0, 0.85, 0.55), 0.1)
+		m.albedo_color = Color(0.93, 0.85, 0.68)
+		v._cyl(r * 1.0, 0.03, Vector3(0, 0.028, 0), _wood, root, r * 1.12)
+		v._cyl(r * 1.1, 0.002, Vector3(0, 0.044, 0), m, root)
+		for hh in [0.018, 0.041]:
+			v._torus(r * 1.08, 0.0014, Vector3(0, hh, 0), _rope, root)
+		for k in 10:
+			var da := TAU * k / 10.0
+			var lace := v._box(Vector3(0.0012, 0.024, 0.0012), Vector3(cos(da) * r * 1.09, 0.03, sin(da) * r * 1.09), _rope, root)
+			lace.rotation.z = 0.25 if k % 2 == 0 else -0.25
+		return [m, ring]
+	if kind == "buoy":
+		# a harbour buoy: red and white float with a lamp on top
+		m = v._lit(Color(1.0, 0.25, 0.1), 0.1)
+		var red := v._mat(Color(0.86, 0.1, 0.08), 0.0, 0.3)
+		v._mesh(Parts.lathe(PackedVector2Array([Vector2(r * 0.95, 0.013), Vector2(r * 1.05, 0.02), Vector2(r * 0.9, 0.032),
+			Vector2(r * 0.55, 0.05), Vector2(r * 0.3, 0.06), Vector2(0, 0.061)]), 28), red, Vector3.ZERO, root)
+		v._cyl(r * 0.99, 0.006, Vector3(0, 0.0275, 0), v._m_white, root, r * 0.92)
+		v._cyl(0.0022, 0.012, Vector3(0, 0.066, 0), v._m_steel, root)
+		_sphere(0.0048, 1.0, m, Vector3(0, 0.074, 0), root)
+		return [m, ring]
+	if kind == "islet":
+		# a rock islet with a little palm; a ring of light at the waterline flashes
+		m = v._lit(Color(0.4, 1.0, 0.9), 0.1)
+		v._torus(r * 1.12, 0.0016, Vector3(0, 0.004, 0), m, root)
+		_sphere(r * 0.98, 0.75, _rock, Vector3(0, 0.013 + r * 0.45, 0), root)
+		_sphere(r * 0.55, 0.8, _rock, Vector3(r * 0.5, 0.013 + r * 0.9, r * 0.2), root)
+		var tr := PackedVector3Array()
+		for i in 5:
+			var t := i / 4.0
+			tr.append(Vector3(-r * 0.2 + 0.008 * t * t, 0.013 + r * 0.8 + 0.045 * t, 0.004 * sin(t * 2.0)))
+		v._mesh(Parts.tube(tr, 0.0024, 6), _wood, Vector3.ZERO, root)
+		for k in 7:
+			var leaf := v._mesh(_frond(0.034, 0.007, 0.01, 0.014), _leaf, tr[4], root)
+			leaf.rotation.y = TAU * k / 7.0
+		return [m, ring]
 	if kind == "beach":
 		m = v._mat(Color.WHITE, 0.0, 0.18)
 		m.albedo_texture = _beach_tex
@@ -163,6 +201,33 @@ func surfboard(s: PinPhysics.Seg) -> StandardMaterial3D:
 	# wooden stand and a chrome foot
 	v._box(Vector3(0.03, 0.007, 0.009), TableView.to3(c + Vector2(0, 0.006), 0.0035), _wood)
 	v._box(Vector3(0.036, 0.002, 0.013), TableView.to3(c + Vector2(0, 0.006), 0.001), v._m_steel)
+	return m
+
+
+## A big scallop shell standing on edge, facing down the table. Lights when hit.
+func shell_target(s: PinPhysics.Seg) -> StandardMaterial3D:
+	var m := v._mat(Color(1.0, 0.85, 0.6), 0.0, 0.3)
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.emission_enabled = true
+	m.emission = Color(1.0, 0.75, 0.35)
+	if _shell != null:
+		m.albedo_texture = _shell
+		m.emission_texture = _shell
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		m.alpha_scissor_threshold = 0.4
+	var d := (s.b - s.a).normalized()
+	var n := Vector2(d.y, -d.x)
+	if n.y > 0.0:
+		n = -n
+	var c := (s.a + s.b) * 0.5
+	var size := s.a.distance_to(s.b) * 1.15
+	var yaw := atan2(n.x, -n.y)
+	var qm := QuadMesh.new()
+	qm.size = Vector2(size, size)
+	var mi := v._mesh(qm, m, TableView.to3(c, size * 0.5 + 0.003))
+	mi.rotation = Vector3(deg_to_rad(-12.0), yaw, 0)
+	var foot := v._box(Vector3(size * 0.8, 0.005, 0.006), TableView.to3(c, 0.0025), _wood)
+	foot.rotation.y = yaw
 	return m
 
 

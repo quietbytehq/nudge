@@ -459,8 +459,8 @@ func _build_segments() -> void:
 
 
 func _build_target(s: PinPhysics.Seg) -> void:
-	if _theme != null and s.id < 5:
-		_target_mats[s.id] = _theme.surfboard(s)
+	if _theme != null:
+		_target_mats[s.id] = _theme.surfboard(s) if s.id < 5 else _theme.shell_target(s)
 		_target_flash[s.id] = 0.0
 		return
 	var cols := [Color(1.0, 0.8, 0.1), Color(1.0, 0.3, 0.1), Color(0.1, 0.8, 1.0), Color(0.45, 1.0, 0.25),
