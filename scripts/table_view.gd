@@ -411,6 +411,29 @@ func _build_cabinet() -> void:
 		add_child(l)
 
 
+var _m_glass: StandardMaterial3D
+var _m_glass_rim: StandardMaterial3D
+
+func _glass_mat() -> StandardMaterial3D:
+	if _m_glass == null:
+		_m_glass = _m_plastic.duplicate()
+		_m_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_m_glass.albedo_color = Color(1, 1, 1, float(table.get("glass", 0.42)))
+		_m_glass.emission_energy_multiplier = 0.03
+		_m_glass.roughness = 0.05
+		_m_glass.metallic_specular = 0.8
+		_m_glass.clearcoat = 1.0
+		_m_glass.clearcoat_roughness = 0.03
+	return _m_glass
+
+
+func _glass_rim_mat() -> StandardMaterial3D:
+	if _m_glass_rim == null:
+		var c: Color = table.get("glass_rim", Color(1.0, 0.85, 0.45))
+		_m_glass_rim = _lit(c, 1.6)
+	return _m_glass_rim
+
+
 func _build_plastics() -> void:
 	var i := 0
 	for entry in TableLayout.plastics():
@@ -418,8 +441,14 @@ func _build_plastics() -> void:
 		var bevel: float = entry[1]
 		# each cover shows a different part of the plastics art sheet
 		var uv := Rect2(0.5 * (i % 2), 0.25 * ((i / 2) % 4), 0.5, 0.25)
-		_mesh(Parts.extrude(poly, 0.0285, 0.0300, 0.0), _m_white)
-		_mesh(Parts.extrude(poly, 0.0300, 0.0335, bevel, uv), _m_plastic)
+		if bevel > 0.0:
+			# slingshots and lane covers are tinted clear acrylic, so the floor art shows through
+			_mesh(Parts.extrude(poly, 0.0300, 0.0335, bevel, uv), _glass_mat())
+			for e in poly.size():
+				_seg_box(poly[e], poly[(e + 1) % poly.size()], 0.0014, 0.0018, _glass_rim_mat(), 0.0333)
+		else:
+			_mesh(Parts.extrude(poly, 0.0285, 0.0300, 0.0), _m_white)
+			_mesh(Parts.extrude(poly, 0.0300, 0.0335, bevel, uv), _m_plastic)
 		var cen := Vector2.ZERO
 		for q in poly:
 			cen += q

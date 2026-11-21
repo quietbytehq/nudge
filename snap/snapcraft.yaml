@@ -1,7 +1,7 @@
 name: nudge-pinball
 title: Nudge
 base: core24
-version: "0.4.1"
+version: "0.4.2"
 summary: Arcade pinball with space and island tables
 description: |
   Nudge is a 3D arcade pinball game by QuietByte. Table one, Cosmic Drift, has
@@ -30,7 +30,7 @@ apps:
 parts:
   nudge-pinball:
     plugin: dump
-    source: dist/nudge_0.4.1_amd64.deb
+    source: dist/nudge_0.4.2_amd64.deb
     override-build: |
       craftctl default
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/nudge.png|' \
