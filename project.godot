@@ -5,7 +5,7 @@ config_version=5
 
 config/name="Nudge"
 config/description="Nudge - arcade pinball by QuietByte"
-config/version="0.4.0"
+config/version="0.4.1"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="nudge"
 config/icon="res://icon.png"
