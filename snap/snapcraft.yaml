@@ -1,14 +1,16 @@
 name: nudge-pinball
 title: Nudge
 base: core24
-version: "0.4.2"
+version: "0.5.0"
 summary: Arcade pinball with space and island tables
 description: |
   Nudge is a 3D arcade pinball game by QuietByte. Table one, Cosmic Drift, has
   bumpers on the sun and planets, orbit lanes, a spinner and a black hole that
   swallows the ball. Table two, Paradise Bay, is a bright island table with a
   volcano, surfboard targets and a third flipper. Table three, Alpenglow, is
-  a lakeside castle at dusk with shields to light and a castle multiball. Includes a follow camera, a top-ten table and three
+  a lakeside castle at dusk with shields to light and a castle multiball.
+  Table four, Palace Night, is an Arabian palace garden by moonlight with a
+  genie lamp, five jewelled doors and a magic carpet ramp. Includes a follow camera, a top-ten table and three
   graphics quality levels for slower graphics chips.
 grade: stable
 confinement: strict
@@ -30,7 +32,7 @@ apps:
 parts:
   nudge-pinball:
     plugin: dump
-    source: dist/nudge_0.4.2_amd64.deb
+    source: dist/nudge_0.5.0_amd64.deb
     override-build: |
       craftctl default
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/nudge.png|' \

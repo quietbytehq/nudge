@@ -281,7 +281,7 @@ func _ball_in_lane() -> PinPhysics.Ball:
 
 func _toast(text: String, seconds: float = 2.5) -> void:
 	# awards and big moments get the animated banner; plain notices stay as a toast
-	if "+" in text or "JACKPOT" in text or "COMPLETE" in text:
+	if "+" in text or "JACKPOT" in text or "COMPLETE" in text or "VAULT" in text:
 		hud.banner(text)
 	else:
 		hud.toast(text, seconds)
@@ -528,13 +528,25 @@ func _capture(at: Vector2) -> void:
 				# Alpenglow: the gate was open, so this is the jackpot and two more balls
 				_gate_open = false
 				prize = 10000
-				label = "CASTLE JACKPOT  -  MULTIBALL"
+				label = table.get("jackpot_text", "CASTLE JACKPOT  -  MULTIBALL")
 				for sid in _shields:
 					view.set_target_lit(sid, false)
 				_shields.clear()
 				var kick2: Vector2 = table.get("saucer_kick", Vector2(1.2, -0.9))
 				_pending_balls.append([1.7, TableLayout.HOLE + Vector2(0.04, -0.012), kick2])
 				_pending_balls.append([2.3, TableLayout.HOLE + Vector2(0.04, -0.012), kick2 * 0.85])
+			elif table.get("wishes", false):
+				# Palace Night: the genie grants a random wish
+				var wish := randi() % 3
+				if wish == 0:
+					prize = 2500
+					label = "WISH GRANTED  -  GOLD"
+				elif wish == 1:
+					multiplier = mini(multiplier + 1, 5)
+					label = "WISH GRANTED  -  BONUS x%d" % multiplier
+				else:
+					prize = 5000
+					label = "WISH GRANTED  -  RICHES"
 			_add_score(prize)
 			_pop(at, prize, "orange")
 			view.hole_pulse(1.0)
@@ -560,7 +572,7 @@ func _shield_hit(id: int, wp: Vector3) -> void:
 		view.excite(2.0)
 		sfx.play("bonus", wp, 1.0)
 		sfx.say("allright", 2)
-		_toast("SHIELDS COMPLETE  -  THE CASTLE GATE IS OPEN", 2.6)
+		_toast(table.get("gate_text", "SHIELDS COMPLETE  -  THE CASTLE GATE IS OPEN"), 2.6)
 
 
 ## A ball has been taken onto the ramp by the physics; ride it along the path.

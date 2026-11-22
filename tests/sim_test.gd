@@ -9,7 +9,7 @@ var fails := 0
 
 
 func _init() -> void:
-	for id in ["deep_space", "paradise_bay", "alpenglow"]:
+	for id in ["deep_space", "paradise_bay", "alpenglow", "palace_night"]:
 		print("===== table: ", id)
 		L.table_id = id
 		test_launch()

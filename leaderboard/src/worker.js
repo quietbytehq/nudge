@@ -6,7 +6,7 @@
 // The game is open source, so a submitted score cannot be proved genuine. The
 // checks here keep out junk and rude names; the admin link removes the rest.
 
-const TABLES = { deep_space: "Cosmic Drift", paradise_bay: "Paradise Bay", alpenglow: "Alpenglow" };
+const TABLES = { deep_space: "Cosmic Drift", paradise_bay: "Paradise Bay", alpenglow: "Alpenglow", palace_night: "Palace Night" };
 const BLOCKED = ["fuck", "shit", "cunt", "nigg", "fag", "bitch", "dick", "cock", "pussy", "rape", "nazi", "hitler", "porn", "sex", "whore", "slut", "arse", "wank"];
 const PER_HOUR = 6;
 

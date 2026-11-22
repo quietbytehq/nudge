@@ -87,6 +87,8 @@ func setup(p: PinPhysics, table_def: Dictionary = {}) -> void:
 		_theme = ParadiseParts.new(self)
 	elif table.get("theme", "") == "alpenglow":
 		_theme = AlpenglowParts.new(self)
+	elif table.get("theme", "") == "palace":
+		_theme = PalaceParts.new(self)
 	_build_cabinet()
 	_build_plastics()
 	_build_segments()

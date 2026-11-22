@@ -40,8 +40,8 @@ Priority: optional
 Architecture: amd64
 Maintainer: QuietByte <quietbyte.2026@gmail.com>
 Description: Nudge - arcade pinball
- A 3D arcade pinball game by QuietByte with three tables, Cosmic Drift,
- Paradise Bay and Alpenglow, and a global top 100.
+ A 3D arcade pinball game by QuietByte with four tables, Cosmic Drift,
+ Paradise Bay, Alpenglow and Palace Night, and a global top 100.
 CTRL
 dpkg-deb --build --root-owner-group "$DEB" "$DIST/nudge_${VERSION}_amd64.deb" >/dev/null
 
