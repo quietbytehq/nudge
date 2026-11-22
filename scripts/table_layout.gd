@@ -217,8 +217,8 @@ static func _build_paradise(p: PinPhysics) -> void:
 	var K := PinPhysics.Kind
 	var hw := W * 0.5
 	var post := POST_ID
-	# Palace Night shares the ramp and the target row, but has no third flipper
-	# and no wall pocket: its genie-lamp saucer sits at the head of the pool
+	# Palace Night shares the ramp, the target row and the third flipper, but has
+	# no wall pocket: its genie-lamp saucer sits at the head of the pool
 	var palace := table_id == "palace_night"
 
 	# Outer walls, shooter lane, top arch and one-way gate
@@ -275,6 +275,9 @@ static func _build_paradise(p: PinPhysics) -> void:
 	# Main flippers, then the third one above the tiki hut with its feed guide
 	p.add_flipper(Vector2(XC - FLIP_DX, FLIP_Y), -28.0, 28.0, 0)
 	p.add_flipper(Vector2(XC + FLIP_DX, FLIP_Y), 208.0, 152.0, 1)
+	var upper := p.add_flipper(Vector2(-0.19, 0.665), -28.0, 28.0, 2)
+	upper.length = 0.058
+	p.add_seg(Vector2(-hw, 0.705), Vector2(-0.1862, 0.6721))
 	if palace:
 		# genie lamp saucer at the head of the pool, with a post either side
 		p.add_sensor(Rect2(HOLE - Vector2(0.012, 0.012), Vector2(0.024, 0.024)), S_HOLE)
@@ -282,10 +285,6 @@ static func _build_paradise(p: PinPhysics) -> void:
 			p.add_circ(HOLE + Vector2(sg * 0.048, 0.018), 0.007, K.POST, post)
 			post += 1
 	else:
-		var upper := p.add_flipper(Vector2(-0.19, 0.665), -28.0, 28.0, 2)
-		upper.length = 0.058
-		p.add_seg(Vector2(-hw, 0.705), Vector2(-0.1862, 0.6721))
-
 		# Tiki hut: a pocket in the left wall that holds the ball, then kicks it out
 		p.add_seg(Vector2(-hw, 0.565), Vector2(-0.168, 0.546))
 		p.add_seg(Vector2(-hw, 0.487), Vector2(-0.20, 0.475))
